@@ -1,0 +1,6 @@
+
+添加模块
+./configure --add-module=/home/share/nginx-1.13.4/mytest
+
+重新加载
+./nginx  -c /home/share/nginx-1.13.4/conf/nginx.conf -s reload
