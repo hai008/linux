@@ -1128,15 +1128,6 @@ ngx_core_module_init_conf(ngx_cycle_t *cycle, void *conf)
 static char *
 ngx_set_user(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 {
-#if (NGX_WIN32)
-
-    ngx_conf_log_error(NGX_LOG_WARN, cf, 0,
-                       "\"user\" is not supported, ignored");
-
-    return NGX_CONF_OK;
-
-#else
-
     ngx_core_conf_t  *ccf = conf;
 
     char             *group;
@@ -1183,8 +1174,6 @@ ngx_set_user(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     ccf->group = grp->gr_gid;
 
     return NGX_CONF_OK;
-
-#endif
 }
 
 

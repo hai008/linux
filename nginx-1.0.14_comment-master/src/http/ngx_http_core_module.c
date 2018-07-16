@@ -1395,7 +1395,7 @@ ngx_http_core_content_phase(ngx_http_request_t *r,
     ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "content phase: %ui", r->phase_handler);
 
-    rc = ph->handler(r);
+    rc = ph->handler(r);//调用具体模块的处理函数  如ngx_http_fastcgi_handler
 
     if (rc != NGX_DECLINED) {
         ngx_http_finalize_request(r, rc);
