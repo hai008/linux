@@ -17,7 +17,7 @@ do
 			 text=$(echo -e ""  " ${str// /-}") 
              text1="$text  $(addr2line -e $1 -f $line1 -s)"
              text2="$text  $(addr2line -e $1 -f $line2 -s | sed 's/^/    /' )"
-			 #echo $text1 >> $3
+			 echo $text1 >> $3
  			 echo $text2 >> $3
 
              echo >> $3  
