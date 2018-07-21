@@ -955,7 +955,7 @@ ngx_drain_connections(void)
     }
 }
 
-
+//客户端是和那个本地ip地址建立的连接
 ngx_int_t
 ngx_connection_local_sockaddr(ngx_connection_t *c, ngx_str_t *s,
     ngx_uint_t port)

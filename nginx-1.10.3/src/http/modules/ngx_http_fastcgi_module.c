@@ -854,10 +854,10 @@ ngx_http_fastcgi_create_request(ngx_http_request_t *r)
         while (*(uintptr_t *) le.ip) {
 
             lcode = *(ngx_http_script_len_code_pt *) le.ip;
-            key_len = lcode(&le);
+            key_len = lcode(&le);//upstream 调用 ngx_http_script_copy_len_code
 
             lcode = *(ngx_http_script_len_code_pt *) le.ip;
-            skip_empty = lcode(&le);
+            skip_empty = lcode(&le);//upstream 调用 ngx_http_script_copy_len_code
 
             for (val_len = 0; *(uintptr_t *) le.ip; val_len += lcode(&le)) {
                 lcode = *(ngx_http_script_len_code_pt *) le.ip;

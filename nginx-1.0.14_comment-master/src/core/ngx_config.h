@@ -62,13 +62,9 @@
 #define NGX_NOACCEPT_SIGNAL      WINCH
 #define NGX_RECONFIGURE_SIGNAL   HUP
 
-#if (NGX_LINUXTHREADS)
-#define NGX_REOPEN_SIGNAL        INFO
-#define NGX_CHANGEBIN_SIGNAL     XCPU
-#else
+
 #define NGX_REOPEN_SIGNAL        USR1
 #define NGX_CHANGEBIN_SIGNAL     USR2
-#endif
 
 #define ngx_cdecl
 #define ngx_libc_cdecl
