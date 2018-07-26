@@ -1,0 +1,118 @@
+---- routing_key Matches (135 in 17 files) ----
+amqp.h (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) line 1873 :  * \param [in] routing_key the routing key to use when publishing the message
+amqp_basic_publish in amqp.h (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) :     amqp_bytes_t exchange, amqp_bytes_t routing_key, amqp_boolean_t mandatory,
+amqp_envelope_t_ in amqp.h (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) :       routing_key; /**< the routing key this message was published with */
+AMQPMessage in AMQPcpp.h (D:\amqpcpp-master\include) : 	std::string routing_key;
+AMQPMessage in AMQPcpp.h (D:\amqpcpp-master\include) : 		void setRoutingKey(amqp_bytes_t routing_key);
+AMQPMessage in AMQPcpp.h (D:\amqpcpp-master\include) : 		void setRoutingKey(std::string routing_key);
+AMQPExchange::sendBindCommand in AMQPExchange.cpp (D:\amqpcpp-master\src) : 		s.routing_key = keyByte;
+AMQPMessage.cpp (D:\amqpcpp-master\src) line 92 : void AMQPMessage::setRoutingKey(amqp_bytes_t routing_key) {
+AMQPMessage::setRoutingKey in AMQPMessage.cpp (D:\amqpcpp-master\src) : 	if (routing_key.len)
+AMQPMessage::setRoutingKey in AMQPMessage.cpp (D:\amqpcpp-master\src) : 		this->routing_key.assign( (char*)routing_key.bytes, routing_key.len );
+AMQPMessage.cpp (D:\amqpcpp-master\src) line 97 : void AMQPMessage::setRoutingKey(string routing_key) {
+AMQPMessage::setRoutingKey in AMQPMessage.cpp (D:\amqpcpp-master\src) : 	this->routing_key=routing_key;
+AMQPMessage::getRoutingKey in AMQPMessage.cpp (D:\amqpcpp-master\src) : 	return routing_key;
+AMQPQueue::sendBindCommand in AMQPQueue.cpp (D:\amqpcpp-master\src) : 		s.routing_key = keyByte;
+AMQPQueue::sendUnBindCommand in AMQPQueue.cpp (D:\amqpcpp-master\src) : 		s.routing_key = keyByte;
+AMQPQueue::sendGetCommand in AMQPQueue.cpp (D:\amqpcpp-master\src) : 		amqp_bytes_t routingKey = data->routing_key;
+AMQPQueue::sendConsumeCommand in AMQPQueue.cpp (D:\amqpcpp-master\src) : 		pmessage->setRoutingKey(delivery->routing_key);
+main in amqps_listen.c (D:\rabbitmq-c-master\rabbitmq-c-master\examples) :              (char *)envelope.exchange.bytes, (int)envelope.routing_key.len,
+main in amqps_listen.c (D:\rabbitmq-c-master\rabbitmq-c-master\examples) :              (char *)envelope.routing_key.bytes);
+main in amqps_listenq.c (D:\rabbitmq-c-master\rabbitmq-c-master\examples) :              (char *)envelope.exchange.bytes, (int)envelope.routing_key.len,
+main in amqps_listenq.c (D:\rabbitmq-c-master\rabbitmq-c-master\examples) :              (char *)envelope.routing_key.bytes);
+amqp_basic_publish in amqp_api.c (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) :                        amqp_bytes_t exchange, amqp_bytes_t routing_key,
+amqp_basic_publish in amqp_api.c (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) :   m.routing_key = routing_key;
+amqp_destroy_envelope in amqp_consumer.c (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) :   amqp_bytes_free(envelope->routing_key);
+amqp_consume_message in amqp_consumer.c (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) :   envelope->routing_key = amqp_bytes_malloc_dup(delivery_method->routing_key);
+amqp_consume_message in amqp_consumer.c (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) :       amqp_bytes_malloc_dup_failed(envelope->routing_key)) {
+amqp_consume_message in amqp_consumer.c (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) :   amqp_bytes_free(envelope->routing_key);
+amqp_decode_method in amqp_framing.c (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) :             !amqp_decode_bytes(encoded, &offset, &m->routing_key, len))
+amqp_decode_method in amqp_framing.c (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) :             !amqp_decode_bytes(encoded, &offset, &m->routing_key, len))
+amqp_decode_method in amqp_framing.c (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) :             !amqp_decode_bytes(encoded, &offset, &m->routing_key, len))
+amqp_decode_method in amqp_framing.c (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) :             !amqp_decode_bytes(encoded, &offset, &m->routing_key, len))
+amqp_decode_method in amqp_framing.c (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) :             !amqp_decode_bytes(encoded, &offset, &m->routing_key, len))
+amqp_decode_method in amqp_framing.c (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) :             !amqp_decode_bytes(encoded, &offset, &m->routing_key, len))
+amqp_decode_method in amqp_framing.c (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) :             !amqp_decode_bytes(encoded, &offset, &m->routing_key, len))
+amqp_decode_method in amqp_framing.c (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) :             !amqp_decode_bytes(encoded, &offset, &m->routing_key, len))
+amqp_encode_method in amqp_framing.c (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) :       if (UINT8_MAX < m->routing_key.len ||
+amqp_encode_method in amqp_framing.c (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) :           !amqp_encode_8(encoded, &offset, (uint8_t)m->routing_key.len) ||
+amqp_encode_method in amqp_framing.c (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) :           !amqp_encode_bytes(encoded, &offset, m->routing_key))
+amqp_encode_method in amqp_framing.c (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) :       if (UINT8_MAX < m->routing_key.len ||
+amqp_encode_method in amqp_framing.c (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) :           !amqp_encode_8(encoded, &offset, (uint8_t)m->routing_key.len) ||
+amqp_encode_method in amqp_framing.c (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) :           !amqp_encode_bytes(encoded, &offset, m->routing_key))
+amqp_encode_method in amqp_framing.c (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) :       if (UINT8_MAX < m->routing_key.len ||
+amqp_encode_method in amqp_framing.c (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) :           !amqp_encode_8(encoded, &offset, (uint8_t)m->routing_key.len) ||
+amqp_encode_method in amqp_framing.c (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) :           !amqp_encode_bytes(encoded, &offset, m->routing_key))
+amqp_encode_method in amqp_framing.c (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) :       if (UINT8_MAX < m->routing_key.len ||
+amqp_encode_method in amqp_framing.c (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) :           !amqp_encode_8(encoded, &offset, (uint8_t)m->routing_key.len) ||
+amqp_encode_method in amqp_framing.c (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) :           !amqp_encode_bytes(encoded, &offset, m->routing_key))
+amqp_encode_method in amqp_framing.c (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) :       if (UINT8_MAX < m->routing_key.len ||
+amqp_encode_method in amqp_framing.c (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) :           !amqp_encode_8(encoded, &offset, (uint8_t)m->routing_key.len) ||
+amqp_encode_method in amqp_framing.c (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) :           !amqp_encode_bytes(encoded, &offset, m->routing_key))
+amqp_encode_method in amqp_framing.c (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) :       if (UINT8_MAX < m->routing_key.len ||
+amqp_encode_method in amqp_framing.c (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) :           !amqp_encode_8(encoded, &offset, (uint8_t)m->routing_key.len) ||
+amqp_encode_method in amqp_framing.c (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) :           !amqp_encode_bytes(encoded, &offset, m->routing_key))
+amqp_encode_method in amqp_framing.c (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) :       if (UINT8_MAX < m->routing_key.len ||
+amqp_encode_method in amqp_framing.c (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) :           !amqp_encode_8(encoded, &offset, (uint8_t)m->routing_key.len) ||
+amqp_encode_method in amqp_framing.c (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) :           !amqp_encode_bytes(encoded, &offset, m->routing_key))
+amqp_encode_method in amqp_framing.c (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) :       if (UINT8_MAX < m->routing_key.len ||
+amqp_encode_method in amqp_framing.c (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) :           !amqp_encode_8(encoded, &offset, (uint8_t)m->routing_key.len) ||
+amqp_encode_method in amqp_framing.c (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) :           !amqp_encode_bytes(encoded, &offset, m->routing_key))
+amqp_framing.c (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) line 2537 :  * @param [in] routing_key routing_key
+amqp_exchange_bind in amqp_framing.c (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) :                        amqp_bytes_t routing_key, amqp_table_t arguments) {
+amqp_exchange_bind in amqp_framing.c (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) :   req.routing_key = routing_key;
+amqp_framing.c (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) line 2565 :  * @param [in] routing_key routing_key
+amqp_exchange_unbind in amqp_framing.c (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) :                          amqp_bytes_t routing_key, amqp_table_t arguments) {
+amqp_exchange_unbind in amqp_framing.c (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) :   req.routing_key = routing_key;
+amqp_framing.c (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) line 2625 :  * @param [in] routing_key routing_key
+amqp_queue_bind in amqp_framing.c (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) :     amqp_bytes_t exchange, amqp_bytes_t routing_key, amqp_table_t arguments) {
+amqp_queue_bind in amqp_framing.c (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) :   req.routing_key = routing_key;
+amqp_framing.c (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) line 2698 :  * @param [in] routing_key routing_key
+amqp_queue_unbind in amqp_framing.c (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) :     amqp_bytes_t exchange, amqp_bytes_t routing_key, amqp_table_t arguments) {
+amqp_queue_unbind in amqp_framing.c (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) :   req.routing_key = routing_key;
+amqp_exchange_bind_t_ in amqp_framing.h (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) :   amqp_bytes_t routing_key; /**< routing-key */
+amqp_exchange_unbind_t_ in amqp_framing.h (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) :   amqp_bytes_t routing_key; /**< routing-key */
+amqp_queue_bind_t_ in amqp_framing.h (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) :   amqp_bytes_t routing_key; /**< routing-key */
+amqp_queue_unbind_t_ in amqp_framing.h (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) :   amqp_bytes_t routing_key; /**< routing-key */
+amqp_basic_publish_t_ in amqp_framing.h (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) :   amqp_bytes_t routing_key; /**< routing-key */
+amqp_basic_return_t_ in amqp_framing.h (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) :   amqp_bytes_t routing_key; /**< routing-key */
+amqp_basic_deliver_t_ in amqp_framing.h (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) :   amqp_bytes_t routing_key;   /**< routing-key */
+amqp_basic_get_ok_t_ in amqp_framing.h (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) :   amqp_bytes_t routing_key;   /**< routing-key */
+amqp_framing.h (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) line 944 :  * @param [in] routing_key routing_key
+amqp_exchange_bind in amqp_framing.h (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) :                        amqp_bytes_t routing_key, amqp_table_t arguments);
+amqp_framing.h (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) line 960 :  * @param [in] routing_key routing_key
+amqp_exchange_unbind in amqp_framing.h (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) :                          amqp_bytes_t routing_key, amqp_table_t arguments);
+amqp_framing.h (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) line 994 :  * @param [in] routing_key routing_key
+amqp_queue_bind in amqp_framing.h (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) :     amqp_bytes_t exchange, amqp_bytes_t routing_key, amqp_table_t arguments);
+amqp_framing.h (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) line 1035 :  * @param [in] routing_key routing_key
+amqp_queue_unbind in amqp_framing.h (D:\rabbitmq-c-master\rabbitmq-c-master\librabbitmq) :     amqp_bytes_t exchange, amqp_bytes_t routing_key, amqp_table_t arguments);
+main in amqp_listen.c (D:\rabbitmq-c-master\rabbitmq-c-master\examples) :              (char *)envelope.exchange.bytes, (int)envelope.routing_key.len,
+main in amqp_listen.c (D:\rabbitmq-c-master\rabbitmq-c-master\examples) :              (char *)envelope.routing_key.bytes);
+main in amqp_listenq.c (D:\rabbitmq-c-master\rabbitmq-c-master\examples) :            (char *)envelope.exchange.bytes, (int)envelope.routing_key.len,
+main in amqp_listenq.c (D:\rabbitmq-c-master\rabbitmq-c-master\examples) :            (char *)envelope.routing_key.bytes);
+main in amqp_rpc_sendstring_client.c (D:\rabbitmq-c-master\rabbitmq-c-master\examples) :                (char *)d->exchange.bytes, (int)d->routing_key.len,
+main in amqp_rpc_sendstring_client.c (D:\rabbitmq-c-master\rabbitmq-c-master\examples) :                (char *)d->routing_key.bytes);
+setup_queue in consume.c (D:\rabbitmq-c-master\rabbitmq-c-master\tools) :                                 char *exchange, char *routing_key, int declare,
+setup_queue in consume.c (D:\rabbitmq-c-master\rabbitmq-c-master\tools) :   char *routing_key_rest;
+setup_queue in consume.c (D:\rabbitmq-c-master\rabbitmq-c-master\tools) :   char *routing_key_token;
+setup_queue in consume.c (D:\rabbitmq-c-master\rabbitmq-c-master\tools) :   int routing_key_count = 0;
+setup_queue in consume.c (D:\rabbitmq-c-master\rabbitmq-c-master\tools) :   if (!exchange && routing_key) {
+setup_queue in consume.c (D:\rabbitmq-c-master\rabbitmq-c-master\tools) :       routing_tmp = strdup(routing_key);
+setup_queue in consume.c (D:\rabbitmq-c-master\rabbitmq-c-master\tools) :       for (routing_key_token =
+setup_queue in consume.c (D:\rabbitmq-c-master\rabbitmq-c-master\tools) :                strtok_r(routing_tmp, LISTEN_KEYS_DELIMITER, &routing_key_rest);
+setup_queue in consume.c (D:\rabbitmq-c-master\rabbitmq-c-master\tools) :            NULL != routing_key_token && routing_key_count < MAX_LISTEN_KEYS - 1;
+setup_queue in consume.c (D:\rabbitmq-c-master\rabbitmq-c-master\tools) :            routing_key_token =
+setup_queue in consume.c (D:\rabbitmq-c-master\rabbitmq-c-master\tools) :                strtok_r(NULL, LISTEN_KEYS_DELIMITER, &routing_key_rest)) {
+setup_queue in consume.c (D:\rabbitmq-c-master\rabbitmq-c-master\tools) :                              cstring_bytes(routing_key_token),
+main in consume.c (D:\rabbitmq-c-master\rabbitmq-c-master\tools) :   static char *routing_key = NULL;
+main in consume.c (D:\rabbitmq-c-master\rabbitmq-c-master\tools) :       {"routing-key", 'r', POPT_ARG_STRING, &routing_key, 0,
+main in consume.c (D:\rabbitmq-c-master\rabbitmq-c-master\tools) :       setup_queue(conn, queue, exchange, routing_key, declare, exclusive);
+publish in producer.cpp (D:\amqpcpp-master\examples\reconnect_to_cluster_nodes\producer) :         std::string routing_key("hola");
+publish in producer.cpp (D:\amqpcpp-master\examples\reconnect_to_cluster_nodes\producer) :                 ex->Publish(protocol, routing_key);
+do_publish in publish.c (D:\rabbitmq-c-master\rabbitmq-c-master\tools) :                        char *routing_key, amqp_basic_properties_t *props,
+do_publish in publish.c (D:\rabbitmq-c-master\rabbitmq-c-master\tools) :                                cstring_bytes(routing_key), 0, 0, props, body);
+main in publish.c (D:\rabbitmq-c-master\rabbitmq-c-master\tools) :   static char *routing_key = NULL;
+main in publish.c (D:\rabbitmq-c-master\rabbitmq-c-master\tools) :       {"routing-key", 'r', POPT_ARG_STRING, &routing_key, 0,
+main in publish.c (D:\rabbitmq-c-master\rabbitmq-c-master\tools) :   if (!exchange && !routing_key) {
+main in publish.c (D:\rabbitmq-c-master\rabbitmq-c-master\tools) :         do_publish(conn, exchange, routing_key, &props, body_bytes);
+main in publish.c (D:\rabbitmq-c-master\rabbitmq-c-master\tools) :     do_publish(conn, exchange, routing_key, &props, body_bytes);

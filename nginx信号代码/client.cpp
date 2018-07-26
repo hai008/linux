@@ -51,6 +51,7 @@ int main(int argc, char **argv) {
             error_exit("fputs");
     }*/
     while (fgets(recvline, MAXLINE, stdin)) { // read()返回0：表明对端关闭连接
+		printf("\nsend : %s \n", recvline);
         write(sockfd, recvline, MAXLINE);
     }
     if (n < 0) // read()返回负值：表明发生错误

@@ -244,7 +244,7 @@ int main(int argc, char *argv[])
   printf("%d\n", getpid());
   ngx_init_signals();
   struct epoll_event event;      // 告诉内核要监听什么事件
-  struct epoll_event wait_event; //内核监听完的结果
+  struct epoll_event wait_event[OPEN_MAX]; //内核监听完的结果
 
   //1.创建tcp监听套接字
   int sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -301,9 +301,9 @@ int main(int argc, char *argv[])
     // 监视并等待多个文件（标准输入，udp套接字）描述符的属性变化（是否可读）
     // 没有属性变化，这个函数会阻塞，直到有变化才往下执行，这里没有设置超时
       printf("bf epoll_wait\n");
-      ret = epoll_wait(epfd, &wait_event, maxi + 1, -1);
+      ret = epoll_wait(epfd, wait_event, OPEN_MAX, -1);
       //printf("signal %d!", ret);
-      if (ret == -1 && errno == EINTR)
+      if (ret == -1 && errno == EINTR)//收到信号
       {
         printf("signal!\n");
         printf("signal!\n");
@@ -328,14 +328,14 @@ int main(int argc, char *argv[])
         
         //continue;
       }
-              printf("ngx_change_binary :%d", ngx_change_binary);
+      printf("ngx_change_binary :%d", ngx_change_binary);
 
       if(ngx_change_binary)
       {
         bool bexit = true;
         for (i = 1; i < OPEN_MAX; i++)
         {
-          if (fd[i] > 0 )
+          if (fd[i] > 0 )//还有未处理的链接
           {
              bexit = false;
           }
@@ -345,83 +345,84 @@ int main(int argc, char *argv[])
           exit(0);
         }
       }
-      //6.1监测sockfd(监听套接字)是否存在连接
-      if ((sockfd == wait_event.data.fd) && (EPOLLIN == wait_event.events & EPOLLIN))
-      {
-        struct sockaddr_in cli_addr;
-        socklen_t clilen = sizeof(cli_addr);
+	  for(int i = 0; i < ret; ++i)
+	  {
+		  //6.1监测sockfd(监听套接字)是否存在连接
+		  if ((sockfd == wait_event[i].data.fd) && (EPOLLIN == wait_event[i].events & EPOLLIN))
+		  {
+			struct sockaddr_in cli_addr;
+			socklen_t clilen = sizeof(cli_addr);
 
-        //6.1.1 从tcp完成连接中提取客户端
-        int connfd = accept(sockfd, (struct sockaddr *)&cli_addr, &clilen);
+			if(ngx_change_binary == 0)//不在升级中
+			{
+				//6.1.1 从tcp完成连接中提取客户端
 
-        //6.1.2 将提取到的connfd放入fd数组中，以便下面轮询客户端套接字
-        for (i = 1; i < OPEN_MAX; i++)
-        {
-          if (fd[i] < 0)
-          {
-            fd[i] = connfd;
-            event.data.fd = connfd; //监听套接字
-            event.events = EPOLLIN; // 表示对应的文件描述符可以读
+				int connfd = accept(sockfd, (struct sockaddr *)&cli_addr, &clilen);
 
-            //6.1.3.事件注册函数，将监听套接字描述符 connfd 加入监听事件
-            if(ngx_change_binary == 0)
-              ret = epoll_ctl(epfd, EPOLL_CTL_ADD, connfd, &event);
-            if (-1 == ret)
-            {
-              perror("epoll_ctl");
-              return -1;
-            }
+				//6.1.2 将提取到的connfd放入fd数组中，以便下面轮询客户端套接字
+				for (int ic = 1; ic < OPEN_MAX; ic++)
+				{
+				  if (fd[ic] < 0)
+				  {
+						fd[ic] = connfd;
+						event.data.fd = connfd;
+						event.events = EPOLLIN;
+						int retAdd = epoll_ctl(epfd, EPOLL_CTL_ADD, connfd, &event);
 
-            break;
-          }
-        }
+						if (-1 == retAdd)
+						{
+							perror("epoll_ctl");
+							return -1;
+						}
 
-        //6.1.4 maxi更新
-        if (i > maxi)
-          maxi = i;
+						break;
+					}
+				}
+			}
+        	else
+			{
+				  
+			}
+		  }
 
-        //6.1.5 如果没有就绪的描述符，就继续epoll监测，否则继续向下看
-        if (--ret <= 0)
-          continue;
-      }
+		  //6.2继续响应就绪的描述符
+		  for (i = 1; i <= maxi; i++)
+		  {
+			if (fd[i] < 0)
+			  continue;
 
-      //6.2继续响应就绪的描述符
-      for (i = 1; i <= maxi; i++)
-      {
-        if (fd[i] < 0)
-          continue;
+			if ((fd[i] == wait_event.data.fd) && (EPOLLIN == wait_event.events & (EPOLLIN | EPOLLERR)))
+			{
+			  int len = 0;
+			  char buf[128] = "";
 
-        if ((fd[i] == wait_event.data.fd) && (EPOLLIN == wait_event.events & (EPOLLIN | EPOLLERR)))
-        {
-          int len = 0;
-          char buf[128] = "";
+			  //6.2.1接受客户端数据
+			  if ((len = recv(fd[i], buf, sizeof(buf), 0)) < 0)
+			  {
+				buf[127] = '\0';
+				printf(buf);
+				if (errno == ECONNRESET) //tcp连接超时、RST
+				{
+				  close(fd[i]);
+				  fd[i] = -1;
+				}
+				else
+				  perror("read error:");
+			  }
+			  else if (len == 0) //客户端关闭连接
+			  {
+				close(fd[i]);
+				fd[i] = -1;
+			  }
+			  else //正常接收到服务器的数据
+				send(fd[i], buf, len, 0);
 
-          //6.2.1接受客户端数据
-          if ((len = recv(fd[i], buf, sizeof(buf), 0)) < 0)
-          {
-            buf[127] = '\0';
-            printf(buf);
-            if (errno == ECONNRESET) //tcp连接超时、RST
-            {
-              close(fd[i]);
-              fd[i] = -1;
-            }
-            else
-              perror("read error:");
-          }
-          else if (len == 0) //客户端关闭连接
-          {
-            close(fd[i]);
-            fd[i] = -1;
-          }
-          else //正常接收到服务器的数据
-            send(fd[i], buf, len, 0);
-
-          //6.2.2所有的就绪描述符处理完了，就退出当前的for循环，继续poll监测
-          if (--ret <= 0)
-            break;
-        }
-      }
+			  //6.2.2所有的就绪描述符处理完了，就退出当前的for循环，继续poll监测
+			  if (--ret <= 0)
+				break;
+			}
+		  }
+	  }
   }
 
   return 0;

@@ -1,0 +1,7 @@
+example_consume
+example_get
+example_publish
+libamqpcpp.a
+*.o
+*~
+*.so
