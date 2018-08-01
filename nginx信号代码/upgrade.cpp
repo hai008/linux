@@ -44,6 +44,7 @@ sig_atomic_t ngx_reconfigure;
 sig_atomic_t ngx_reopen;
 
 sig_atomic_t ngx_change_binary;
+sig_atomic_t ngx_change_binary_old;
 ngx_pid_t ngx_new_binary;
 ngx_uint_t ngx_inherited;
 ngx_uint_t ngx_daemonized;
@@ -214,6 +215,7 @@ void ngx_signal_handler(int signo)
     }
 
     //正常情况下，需要热代码替换，设置标志位
+	ngx_change_binary_old = ngx_change_binary;
     ngx_change_binary = 1;
     action = ", changing binary";
     break;
@@ -296,134 +298,176 @@ int main(int argc, char *argv[])
   }
 
   //6.对已连接的客户端的数据处理
+  ngx_change_binary = 0;
+  ngx_change_binary_old = 0;
   while (1)
   {
     // 监视并等待多个文件（标准输入，udp套接字）描述符的属性变化（是否可读）
     // 没有属性变化，这个函数会阻塞，直到有变化才往下执行，这里没有设置超时
       printf("bf epoll_wait\n");
+
       ret = epoll_wait(epfd, wait_event, OPEN_MAX, -1);
       //printf("signal %d!", ret);
-      if (ret == -1 && errno == EINTR)//收到信号
-      {
-        printf("signal!\n");
-        printf("signal!\n");
-        if (ngx_change_binary)
-        {
-          ngx_pid_t  pid;
-          pid = fork();
-          if(pid == 0)
-          {
-            printf("new binary\n");
-            char csockfd[64];
-            ngx_change_binary = 0;
-            snprintf(csockfd, 64, "%d", sockfd);
-            char * newargv[ ]={"a.out",csockfd,"/etc/passwd",(char *)0};
-            char * envp[ ]={"PATH=/bin",0};
-            execve("/home/l/upgrate/a.out",newargv,envp);
 
-          }
-          sleep(1);
-         
-        }
+		  if (ret == -1 && errno == EINTR)//收到信号
+		  {
+			printf("signal!\n");
+			if (ngx_change_binary)
+			{
+				if(ngx_change_binary_old == 0)//防止还没退出的进程，重复升级
+				{
+					ngx_pid_t  pid;
+					pid = fork();
+					if(pid == 0)
+					{
+						printf("new binary\n");
+						char csockfd[64];
+						ngx_change_binary = 0;
+						snprintf(csockfd, 64, "%d", sockfd);
+						char * newargv[ ]={"a.out", csockfd, (char *)0};
+						char * envp[ ]={"PATH=/bin",0};
+						execve("/home/l/upgrate/a.out",newargv,envp);
+
+					} 
+					sleep(1);
+				}
+			}
+		 }
         
-        //continue;
-      }
-      printf("ngx_change_binary :%d", ngx_change_binary);
+      printf("ngx_change_binary :%d\n", ngx_change_binary);
 
-      if(ngx_change_binary)
-      {
-        bool bexit = true;
-        for (i = 1; i < OPEN_MAX; i++)
-        {
-          if (fd[i] > 0 )//还有未处理的链接
-          {
-             bexit = false;
-          }
-        }
-        if(bexit)
-        {
-          exit(0);
-        }
-      }
+
 	  for(int i = 0; i < ret; ++i)
 	  {
-		  //6.1监测sockfd(监听套接字)是否存在连接
-		  if ((sockfd == wait_event[i].data.fd) && (EPOLLIN == wait_event[i].events & EPOLLIN))
-		  {
-			struct sockaddr_in cli_addr;
-			socklen_t clilen = sizeof(cli_addr);
-
-			if(ngx_change_binary == 0)//不在升级中
+			//监测sockfd(监听套接字)是否存在连接
+			if (fd[0] == wait_event[i].data.fd)
 			{
-				//6.1.1 从tcp完成连接中提取客户端
-
-				int connfd = accept(sockfd, (struct sockaddr *)&cli_addr, &clilen);
-
-				//6.1.2 将提取到的connfd放入fd数组中，以便下面轮询客户端套接字
-				for (int ic = 1; ic < OPEN_MAX; ic++)
+				if(EPOLLIN == (wait_event[i].events & EPOLLIN))
 				{
-				  if (fd[ic] < 0)
-				  {
-						fd[ic] = connfd;
-						event.data.fd = connfd;
-						event.events = EPOLLIN;
-						int retAdd = epoll_ctl(epfd, EPOLL_CTL_ADD, connfd, &event);
+					struct sockaddr_in cli_addr;
+					socklen_t clilen = sizeof(cli_addr);
 
-						if (-1 == retAdd)
+					if(ngx_change_binary == 0)//不在升级中
+					{
+						//从tcp完成连接中提取客户端
+
+						int connfd = accept(sockfd, (struct sockaddr *)&cli_addr, &clilen);
+
+						//将提取到的connfd放入fd数组中，以便下面轮询客户端套接字
+						for (int ic = 1; ic < OPEN_MAX; ic++)
 						{
-							perror("epoll_ctl");
-							return -1;
+						  if (fd[ic] < 0)
+						  {
+								fd[ic] = connfd;
+								event.data.fd = connfd;
+								event.events = EPOLLIN;
+								int retAdd = epoll_ctl(epfd, EPOLL_CTL_ADD, connfd, &event);
+								printf("add accept fd\n");
+								if (-1 == retAdd)
+								{
+									printf("epoll_ctl\n");
+									return -1;
+								}
+								break;
+							}
 						}
-
-						break;
 					}
 				}
-			}
-        	else
-			{
-				  
-			}
-		  }
-
-		  //6.2继续响应就绪的描述符
-		  for (i = 1; i <= maxi; i++)
-		  {
-			if (fd[i] < 0)
-			  continue;
-
-			if ((fd[i] == wait_event.data.fd) && (EPOLLIN == wait_event.events & (EPOLLIN | EPOLLERR)))
-			{
-			  int len = 0;
-			  char buf[128] = "";
-
-			  //6.2.1接受客户端数据
-			  if ((len = recv(fd[i], buf, sizeof(buf), 0)) < 0)
-			  {
-				buf[127] = '\0';
-				printf(buf);
-				if (errno == ECONNRESET) //tcp连接超时、RST
+				else
 				{
-				  close(fd[i]);
-				  fd[i] = -1;
+					printf("err %d", __LINE__);
+					exit(0);
+				}
+			}
+			else
+			{
+				if(EPOLLIN == (wait_event[i].events & EPOLLIN) )
+				{
+					if(EPOLLHUP == (wait_event[i].events & EPOLLHUP) )
+					{
+						printf("err %d", __LINE__);
+						struct epoll_event event1; 
+						epoll_ctl(epfd, EPOLL_CTL_DEL,wait_event[i].data.fd,&event1);
+						close(wait_event[i].data.fd);
+						for (int ic = 1; ic < OPEN_MAX; ic++)
+						{
+							if (fd[ic] ==  wait_event[i].data.fd)
+							{
+								fd[ic] = -1;
+								break;
+							}
+						}
+						continue;
+					}
+					int len = 0;
+					char buf[128] = "";
+
+					//接受客户端数据
+					if ((len = recv(wait_event[i].data.fd, buf, sizeof(buf), 0)) < 0)
+					{
+						printf("err11 %d", __LINE__);
+						if (errno == ECONNRESET) //tcp连接超时、RST
+						{
+							close(wait_event[i].data.fd);
+						  	for (int ic = 1; ic < OPEN_MAX; ic++)
+							{
+							  if (fd[ic] ==  wait_event[i].data.fd)
+							  {
+									fd[ic] = -1;
+									break;
+								}
+							}
+						}
+						else
+						{
+						    printf("read error:\n");
+							exit(0);
+						}
+					}
+					else if (len == 0) //客户端关闭连接
+					{
+						close(wait_event[i].data.fd);
+						for (int ic = 1; ic < OPEN_MAX; ic++)
+						{
+						  if (fd[ic] ==  wait_event[i].data.fd)
+						  {
+								fd[ic] = -1;
+								break;
+							}
+						}
+						
+					}
+					else //正常接收到服务器的数据
+					{
+						buf[127] = '\0';
+						printf(buf);
+						send(wait_event[i].data.fd, buf, len, 0);
+					}
 				}
 				else
-				  perror("read error:");
-			  }
-			  else if (len == 0) //客户端关闭连接
-			  {
-				close(fd[i]);
-				fd[i] = -1;
-			  }
-			  else //正常接收到服务器的数据
-				send(fd[i], buf, len, 0);
-
-			  //6.2.2所有的就绪描述符处理完了，就退出当前的for循环，继续poll监测
-			  if (--ret <= 0)
-				break;
+				{
+					printf("wait_event[i].events %d\n",  wait_event[i].events);
+					printf("err %d", __LINE__);
+					exit(0);
+				}
 			}
-		  }
-	  }
-  }
+		}
+		if(ngx_change_binary)
+		{
+			bool bexit = true;
+			for (i = 1; i < OPEN_MAX; i++)
+			{
+			  if (fd[i] > 0 )//还有未处理的链接
+			  {
+				 bexit = false;
+			  }
+			}
+			if(bexit)
+			{
+			  exit(0);
+			}
+		}
+	}
 
-  return 0;
+	return 0;
 }

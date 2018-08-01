@@ -51,8 +51,19 @@ int main(int argc, char **argv) {
             error_exit("fputs");
     }*/
     while (fgets(recvline, MAXLINE, stdin)) { // read()返回0：表明对端关闭连接
-		printf("\nsend : %s \n", recvline);
+		printf("read length : %d \n", strlen(recvline));
+		if(strlen(recvline) >= 1)
+		{
+			recvline[strlen(recvline)-1] = '\0'; 
+		}
+		printf("send : [%s] end", recvline);
         write(sockfd, recvline, MAXLINE);
+		const char * close1 = "close";
+		if(strcmp(recvline, close1) == 0)
+		{
+			close(sockfd);
+			return 0;
+		}
     }
     if (n < 0) // read()返回负值：表明发生错误
         error_exit("read");
