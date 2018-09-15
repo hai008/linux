@@ -1978,20 +1978,20 @@ ngx_http_ssi_include(ngx_http_request_t *r, ngx_http_ssi_ctx_t *ctx,
     set = params[NGX_HTTP_SSI_INCLUDE_SET];
     stub = params[NGX_HTTP_SSI_INCLUDE_STUB];
 
-    if (uri && file) {
+    if (uri && file) {//两个变量必须有一个为NULL
         ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
                       "inlcusion may be either virtual=\"%V\" or file=\"%V\"",
                       uri, file);
         return NGX_HTTP_SSI_ERROR;
     }
 
-    if (uri == NULL && file == NULL) {
+    if (uri == NULL && file == NULL) {//两个都不能同时为NULL
         ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
                       "no parameter in \"include\" SSI command");
         return NGX_HTTP_SSI_ERROR;
     }
 
-    if (set && stub) {
+    if (set && stub) {//两个变量必须有一个为NULL
         ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
                       "\"set\" and \"stub\" may not be used together "
                       "in \"include\" SSI command");

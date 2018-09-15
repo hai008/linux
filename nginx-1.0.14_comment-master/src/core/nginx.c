@@ -1042,7 +1042,7 @@ ngx_core_module_init_conf(ngx_cycle_t *cycle, void *conf)
                NGX_OLDPID_EXT, sizeof(NGX_OLDPID_EXT));
 
 
-#if !(NGX_WIN32)
+
     //初始化username,user,group
     if (ccf->user == (uid_t) NGX_CONF_UNSET_UINT && geteuid() == 0) {
         struct group   *grp;
@@ -1080,7 +1080,6 @@ ngx_core_module_init_conf(ngx_cycle_t *cycle, void *conf)
         return NGX_CONF_ERROR;
     }
 
-    {
     ngx_str_t  lock_file;
 
     lock_file = cycle->old_cycle->lock_file;
@@ -1117,10 +1116,6 @@ ngx_core_module_init_conf(ngx_cycle_t *cycle, void *conf)
                               ccf->lock_file.len),
                    ".accept", sizeof(".accept"));
     }
-    }
-
-#endif
-
     return NGX_CONF_OK;
 }
 

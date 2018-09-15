@@ -1827,7 +1827,7 @@ ngx_http_run_posted_requests(ngx_connection_t *c)
         }
 
         r = c->data;
-        pr = r->main->posted_requests;         //获取待执行的请求链表
+        pr = r->main->posted_requests;         //获取待执行的请求链表，也可能有子请求
 
         if (pr == NULL) {
             return;
