@@ -134,7 +134,7 @@ static ngx_command_t ngx_http_lua_cmds[] = {
       0,
       NULL },
 
-    { ngx_string("lua_code_cache"),
+    { ngx_string("lua_code_cache"),//lua脚本缓存开关（on/off） 默认on   
       NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_HTTP_LIF_CONF
                         |NGX_CONF_FLAG,
       ngx_http_lua_code_cache,
@@ -338,7 +338,7 @@ static ngx_command_t ngx_http_lua_cmds[] = {
       NULL },
 
     /* content_by_lua_file rel/or/abs/path/to/script */
-    { ngx_string("content_by_lua_file"),
+    { ngx_string("content_by_lua_file"),// lua脚本文件
       NGX_HTTP_LOC_CONF|NGX_HTTP_LIF_CONF|NGX_CONF_TAKE1,
       ngx_http_lua_content_by_lua,
       NGX_HTTP_LOC_CONF_OFFSET,
