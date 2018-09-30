@@ -34,7 +34,7 @@ postconfiguration
 */
 typedef struct {
     ngx_int_t   (*preconfiguration)(ngx_conf_t *cf);  //解析配置文件前调用
-    ngx_int_t   (*postconfiguration)(ngx_conf_t *cf); //完成配置文件解析后调用
+    ngx_int_t   (*postconfiguration)(ngx_conf_t *cf); //完成配置文件解析后调用，一般是调用各个模块的init（如：ngx_http_static_init），把模块函数挂在在phases里
 
     void       *(*create_main_conf)(ngx_conf_t *cf);  //当需要创建数据结构用户存储main级别的全局配置项时候调用
     char       *(*init_main_conf)(ngx_conf_t *cf, void *conf); //初始化main级别配置项

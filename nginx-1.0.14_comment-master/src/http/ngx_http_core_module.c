@@ -811,7 +811,7 @@ ngx_http_handler(ngx_http_request_t *r)
 
     r->connection->unexpected_eof = 0;
 	/*初始化 r->phase_handler 不懂*/
-    if (!r->internal) {
+    if (!r->internal) {//非内部跳转
         switch (r->headers_in.connection_type) {
         case 0:
             r->keepalive = (r->http_version > NGX_HTTP_VERSION_10);
@@ -827,9 +827,9 @@ ngx_http_handler(ngx_http_request_t *r)
         }
 
         r->lingering_close = (r->headers_in.content_length_n > 0);
-        r->phase_handler = 0;
+        r->phase_handler = 0;//11个阶段，从第一个阶段开始
 
-    } else {
+    } else {//内部跳转
         cmcf = ngx_http_get_module_main_conf(r, ngx_http_core_module);
         r->phase_handler = cmcf->phase_engine.server_rewrite_index;		//设置阶段起点
     }
@@ -856,7 +856,7 @@ ngx_http_core_run_phases(ngx_http_request_t *r)
 
     cmcf = ngx_http_get_module_main_conf(r, ngx_http_core_module);
 
-    ph = cmcf->phase_engine.handlers;
+    ph = cmcf->phase_engine.handlers; //该结构用来存储每个阶段的可用的处理函数
 	/* 遍历phase上注册的所有handler，这里是以r->phase_handler为索引组成的链表 */
     while (ph[r->phase_handler].checker) {
 
@@ -2375,7 +2375,7 @@ ngx_http_subrequest(ngx_http_request_t *r,
     ngx_http_core_srv_conf_t      *cscf;
     ngx_http_postponed_request_t  *pr, *p;
 
-    r->main->subrequests--;												//主请求里的子请求计数器
+    r->main->subrequests--;												//主请求里的子请求计数器 255个？
 
     if (r->main->subrequests == 0) {									//子请求数目达到上限
         ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
@@ -2449,6 +2449,9 @@ ngx_http_subrequest(ngx_http_request_t *r,
     sr->read_event_handler = ngx_http_request_empty_handler;
     sr->write_event_handler = ngx_http_handler;		//设置子请求的处理函数为Ngx_http_handler
 
+    //复用data存放最前面的请求，这个请求的数据可以直接发送给客户端。其它的子请求需要缓存数据，等待
+	//最前面的请求结束。如果r为子请求，r没有子请求了，且r为最前面的请求。则最前面的请求将会被切换为
+	//这个刚刚创建的r的子请求
     if (c->data == r && r->postponed == NULL) {
         c->data = sr;
     }

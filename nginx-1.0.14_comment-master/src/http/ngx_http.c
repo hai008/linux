@@ -326,7 +326,7 @@ ngx_http_block(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
         module = ngx_modules[m]->ctx;
         
         //调用回调
-        if (module->postconfiguration) {
+        if (module->postconfiguration) {//各个模块的逻辑处理函数挂在到phases里
             if (module->postconfiguration(cf) != NGX_OK) {
                 return NGX_CONF_ERROR;
             }
@@ -346,7 +346,7 @@ ngx_http_block(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 	//恢复cf
     *cf = pcf;
 
-
+    //重组各个模块的处理逻辑函数
     if (ngx_http_init_phase_handlers(cf, cmcf) != NGX_OK) {
         return NGX_CONF_ERROR;
     }
@@ -472,7 +472,7 @@ ngx_http_init_headers_in_hash(ngx_conf_t *cf, ngx_http_core_main_conf_t *cmcf)
 */
 static ngx_int_t
 ngx_http_init_phase_handlers(ngx_conf_t *cf, ngx_http_core_main_conf_t *cmcf)
-{
+{//重组各个模块的处理逻辑函数
     ngx_int_t                   j;
     ngx_uint_t                  i, n;
     ngx_uint_t                  find_config_index, use_rewrite, use_access;
@@ -587,7 +587,7 @@ ngx_http_init_phase_handlers(ngx_conf_t *cf, ngx_http_core_main_conf_t *cmcf)
         for (j = cmcf->phases[i].handlers.nelts - 1; j >=0; j--) {
             ph->checker = checker;
             ph->handler = h[j];
-            ph->next = n;
+            ph->next = n;//next表示下一个处理阶段中的第一个ngx_http_phase_handler_t处理方法
             ph++;
         }
     }

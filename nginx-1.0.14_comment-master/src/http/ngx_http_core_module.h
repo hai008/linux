@@ -163,7 +163,7 @@ struct ngx_http_phase_handler_s {
 
 typedef struct {
     /*
-    handlers是由ngx_http_phase_handler_t构成的数组首地址，它表示一个请求可能经历的酥油ngx_http_handler_pt处理方法
+    handlers是由ngx_http_phase_handler_t构成的数组首地址，它表示一个请求可能经历的所有ngx_http_handler_pt处理方法
     */
     ngx_http_phase_handler_t  *handlers;
 

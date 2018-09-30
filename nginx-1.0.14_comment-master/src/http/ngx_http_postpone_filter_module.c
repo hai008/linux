@@ -60,6 +60,8 @@ ngx_http_postpone_filter(ngx_http_request_t *r, ngx_chain_t *in)
     ngx_log_debug3(NGX_LOG_DEBUG_HTTP, c->log, 0,
                    "http postpone filter \"%V?%V\" %p", &r->uri, &r->args, in);
 
+
+    //当前请求不是最前面的请求，则需要把当前请求的数据缓存起来
     if (r != c->data) {							//r不是当前正在处理的请求
 
         if (in) {
@@ -77,6 +79,9 @@ ngx_http_postpone_filter(ngx_http_request_t *r, ngx_chain_t *in)
         return NGX_OK;
     }
 
+    //*********执行到这里，说明当前请求就是最前面的请求***********//
+	//这个最前面的请求没有子请求了，也就是后续遍历结束，左孩子，右孩子都没有了。
+	//可以把内容直接输出给客户端
     if (r->postponed == NULL) {				//没有需要延后发送的数据
 
         if (in || c->buffered) {			//使用主请求发送数据

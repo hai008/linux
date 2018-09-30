@@ -1,0 +1,5 @@
+重启
+sudo /usr/local/openresty/nginx/sbin/nginx -s reload -c /usr/local/openresty/nginx/conf/nginx.conf
+
+请求
+curl -d "c=12&d=34" http://192.168.74.135:8080/lua_request?a=12222222222222222222222222222222221221215555555

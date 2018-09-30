@@ -202,11 +202,11 @@ ngx_process_events_and_timers(ngx_cycle_t *cycle)
     ngx_uint_t  flags;
     ngx_msec_t  timer, delta;
 
-    if (ngx_timer_resolution) {
+    if (ngx_timer_resolution) {//nginx更新时间间隔, 超时检测方案1  轮询检测
         timer = NGX_TIMER_INFINITE;
         flags = 0;
 
-    } else {
+    } else {//超时检测方案二， 超时事件最短，最快发生超时事件，放监控IO事件队列里
         timer = ngx_event_find_timer();
         flags = NGX_UPDATE_TIME;
 
@@ -769,7 +769,7 @@ ngx_event_process_init(ngx_cycle_t *cycle)
         rev = c->read;
 
         rev->log = c->log;
-        rev->accept = 1;
+        rev->accept = 1;// 标志位，为1时表示为此事件可以建立新的连接
 
 #if (NGX_HAVE_DEFERRED_ACCEPT)
         rev->deferred_accept = ls[i].deferred_accept;
