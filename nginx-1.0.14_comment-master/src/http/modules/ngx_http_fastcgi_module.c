@@ -543,7 +543,12 @@ static ngx_path_init_t  ngx_http_fastcgi_temp_path = {
     ngx_string(NGX_HTTP_FASTCGI_TEMP_PATH), { 1, 2, 0 }
 };
 
-
+/*
+在收到请求行后，在执行到NGX_HTTP_FIND_CONFIG_PHASE阶段，
+会把ngx_http_fastcgi_handler函数挂在到  NGX_HTTP_CONTENT_PHASE阶段的执行回调函数content_handler上
+（参考ngx_http_update_location_config最后一行）
+content_handler（ngx_http_fastcgi_handler）函数会在ngx_http_core_content_phase里执行
+*/
 static ngx_int_t
 ngx_http_fastcgi_handler(ngx_http_request_t *r)
 {
@@ -2677,7 +2682,7 @@ ngx_http_fastcgi_pass(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
     clcf = ngx_http_conf_get_module_loc_conf(cf, ngx_http_core_module);
 
-    clcf->handler = ngx_http_fastcgi_handler;
+    clcf->handler = ngx_http_fastcgi_handler;/*在checker 调用时 ngx_http_core_content_phase 回调函数ngx_http_fastcgi_handler*/
 
     if (clcf->name.data[clcf->name.len - 1] == '/') {
         clcf->auto_redirect = 1;

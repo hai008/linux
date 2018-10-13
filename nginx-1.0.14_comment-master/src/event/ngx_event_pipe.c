@@ -20,7 +20,11 @@ static ngx_inline void ngx_event_pipe_free_shadow_raw_buf(ngx_chain_t **free,
                                                           ngx_buf_t *buf);
 static ngx_int_t ngx_event_pipe_drain_chains(ngx_event_pipe_t *p);
 
-
+/*
+    从ngx_event_pipe的代码中可以看出，从上游接收及往下游发送分别调用了两个不同的函数：  
+    ngx_event_pipe_read_upstream：从上游读取报文的处理函数。  
+    ngx_event_pipe_write_to_downstream:往下游发送数据。
+*/
 ngx_int_t
 ngx_event_pipe(ngx_event_pipe_t *p, ngx_int_t do_write)
 {
@@ -29,10 +33,11 @@ ngx_event_pipe(ngx_event_pipe_t *p, ngx_int_t do_write)
     ngx_event_t  *rev, *wev;
 
     for ( ;; ) {
-        if (do_write) {
+        if (do_write) {        //do_write标记表明此时是向下游客户端写响应  
+
             p->log->action = "sending to client";
 
-            rc = ngx_event_pipe_write_to_downstream(p);
+            rc = ngx_event_pipe_write_to_downstream(p); //调用pipe_write_to_downstream往下游写响应
 
             if (rc == NGX_ABORT) {
                 return NGX_ABORT;
@@ -48,17 +53,18 @@ ngx_event_pipe(ngx_event_pipe_t *p, ngx_int_t do_write)
 
         p->log->action = "reading upstream";
 
-        if (ngx_event_pipe_read_upstream(p) == NGX_ABORT) {
+        if (ngx_event_pipe_read_upstream(p) == NGX_ABORT) {//调用pipe_read_upstream从上游接收数据
             return NGX_ABORT;
         }
 
-        if (!p->read && !p->upstream_blocked) {
+        if (!p->read && !p->upstream_blocked) { //在允许读取数据的情况下，没有从上游读取到数据
             break;
         }
 
-        do_write = 1;
+        do_write = 1; //读取到数据，往下游写
     }
-
+    //将上游的读事件插入到定时器，将上游的读事件  
+    //加入到epoll中，p->upstream是上游的connection.
     if (p->upstream->fd != -1) {
         rev = p->upstream->read;
 
@@ -68,20 +74,22 @@ ngx_event_pipe(ngx_event_pipe_t *p, ngx_int_t do_write)
             return NGX_ABORT;
         }
 
-        if (rev->active && !rev->ready) {
+        if (rev->active && !rev->ready) {//receive方向处于active状态，但当前没有数据可读
             ngx_add_timer(rev, p->read_timeout);
 
         } else if (rev->timer_set) {
             ngx_del_timer(rev);
         }
     }
-
+    //将下游的读事件插入到定时器，将下游的写事件  
+    //加入到epoll中，p->downstream是下游的connection
     if (p->downstream->fd != -1 && p->downstream->data == p->output_ctx) {
         wev = p->downstream->write;
         if (ngx_handle_write_event(wev, p->send_lowat) != NGX_OK) {
             return NGX_ABORT;
         }
-
+        //当发送的响应数据包速率超过了限制，就会置delayed标记  
+        //,表明被延迟 
         if (!wev->delayed) {
             if (wev->active && !wev->ready) {
                 ngx_add_timer(wev, p->send_timeout);
@@ -117,17 +125,21 @@ ngx_event_pipe_read_upstream(ngx_event_pipe_t *p)
             break;
         }
 
+        //upstream读事件没有数据可读，且预读buf不存在，  
+        //退出循环，预读buf中在读取响应头时可能会顺带着  
+        //读出一部分的响应包体
         if (p->preread_bufs == NULL && !p->upstream->read->ready) {
             break;
         }
 
-        if (p->preread_bufs) {
+        if (p->preread_bufs) {//预读的buf存在
 
             /* use the pre-read bufs if they exist */
-
+            //有preread_bufs存在，那么已经读取了一些响应数据，需要把  
+            //这部分数据挂入到chain里面。  
             chain = p->preread_bufs;
             p->preread_bufs = NULL;
-            n = p->preread_size;
+            n = p->preread_size;//n是已经预读出来的数据，预读buf中已经存在了部分读取数据
 
             ngx_log_debug1(NGX_LOG_DEBUG_EVENT, p->log, 0,
                            "pipe preread: %z", n);
@@ -205,6 +217,9 @@ ngx_event_pipe_read_upstream(ngx_event_pipe_t *p)
                        && p->downstream->write->ready
                        && !p->downstream->write->delayed)
             {
+            //该条件表明，downstream方向write已经准备好，可以发送数据，  
+            //且不存在发送速率超标的情况，那么将upstream_blocked置1，  
+            //阻止上游继续接收数据包，然后，尽快发送，以腾出buffer 
                 /*
                  * if the bufs are not needed to be saved in a cache and
                  * a downstream is ready then write the bufs to a downstream
@@ -220,7 +235,8 @@ ngx_event_pipe_read_upstream(ngx_event_pipe_t *p)
             } else if (p->cacheable
                        || p->temp_file->offset < p->max_temp_file_size)
             {
-
+                //到了这里，buffer都已经使用光了，且下游现在不能写，  
+                //那么只能缓存到临时文件里面去了，HOHO 
                 /*
                  * if it is allowed, then save some bufs from r->in
                  * to a temporary file, and add them to a r->out chain
