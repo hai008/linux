@@ -78,9 +78,9 @@ typedef ngx_int_t (*ngx_http_upstream_init_peer_pt)(ngx_http_request_t *r,
 
 //该结构体定义了load_balance模块的入口，有两个回调函数，用来初始化load_balance模块
 typedef struct {
-    ngx_http_upstream_init_pt        init_upstream;//配置解析时初始化
-    ngx_http_upstream_init_peer_pt   init;//请求时初始化
-    void                            *data;//服务器列表指针
+    ngx_http_upstream_init_pt        init_upstream;//配置解析时初始化   /* 负载均衡的类型 */
+    ngx_http_upstream_init_peer_pt   init;//请求时初始化                /* 负载均衡类型的初始化函数 */
+    void                            *data;//服务器列表指针              /* 指向 ngx_http_upstream_rr_peers_t 结构体 */
 } ngx_http_upstream_peer_t;
 
 //存放upstream配置块中每个服务器的信息

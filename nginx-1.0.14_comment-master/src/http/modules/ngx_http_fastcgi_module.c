@@ -2657,7 +2657,9 @@ ngx_http_fastcgi_split(ngx_http_request_t *r, ngx_http_fastcgi_loc_conf_t *flcf)
 #endif
 }
 
-
+/*
+解析配置文件“fastcgi_pass”的时候执行该函数
+*/
 static char *
 ngx_http_fastcgi_pass(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 {

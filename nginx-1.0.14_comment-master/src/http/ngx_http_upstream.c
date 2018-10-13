@@ -502,10 +502,14 @@ ngx_http_upstream_init_request(ngx_http_request_t *r)
 
     clcf = ngx_http_get_module_loc_conf(r, ngx_http_core_module);
 
+    //设置upstream向下游客户端转发数据的各种参数，主要和  
+    //buf相关
     u->output.alignment = clcf->directio_alignment;
     u->output.pool = r->pool;
     u->output.bufs.num = 1;
     u->output.bufs.size = clcf->client_body_buffer_size;
+
+    //往下游客户端写数据的接口  
     u->output.output_filter = ngx_chain_writer;
     u->output.filter_ctx = &u->writer;
 
@@ -542,6 +546,10 @@ ngx_http_upstream_init_request(ngx_http_request_t *r)
     cln->data = r;
     u->cleanup = &cln->handler;
 
+
+    //u->resolved中保存了用于与上游服务器建立连接的信息，  
+    //可以由开发人员在代码中设置，不设置的话，从配置文件中  
+    //去获取
     if (u->resolved == NULL) {
 
         uscf = u->conf->upstream;
@@ -563,12 +571,14 @@ ngx_http_upstream_init_request(ngx_http_request_t *r)
             return;
         }
 
+        //在这里host应该为一个upstream组的名字  
         host = &u->resolved->host;
 
         umcf = ngx_http_get_module_main_conf(r, ngx_http_upstream_module);
 
         uscfp = umcf->upstreams.elts;
 
+        //遍历系统中的upstream数组，找到匹配的upstream
         for (i = 0; i < umcf->upstreams.nelts; i++) {
 
             uscf = uscfp[i];
@@ -591,7 +601,7 @@ ngx_http_upstream_init_request(ngx_http_request_t *r)
         }
 
         temp.name = *host;
-
+        //下面这部分需要进行域名解析
         ctx = ngx_resolve_start(clcf->resolver, &temp);
         if (ctx == NULL) {
             ngx_http_upstream_finalize_request(r, u,
@@ -609,6 +619,7 @@ ngx_http_upstream_init_request(ngx_http_request_t *r)
 
         ctx->name = *host;
         ctx->type = NGX_RESOLVE_A;
+        //ngx_http_upstream_resolve_handler是域名解析后的回调函数 
         ctx->handler = ngx_http_upstream_resolve_handler;
         ctx->data = r;
         ctx->timeout = clcf->resolver_timeout;
@@ -627,6 +638,8 @@ ngx_http_upstream_init_request(ngx_http_request_t *r)
 
 found:
 	//初始化负载均衡算法
+    //peer.init()方法中会根据upstream的算法去选择一个服务器，来进行发送  
+    //for example:us->peer.init = ngx_http_upstream_init_ip_hash_peer; 
     if (uscf->peer.init(r, uscf) != NGX_OK) {
         ngx_http_upstream_finalize_request(r, u,
                                            NGX_HTTP_INTERNAL_SERVER_ERROR);
@@ -841,6 +854,7 @@ ngx_http_upstream_cache_send(ngx_http_request_t *r, ngx_http_upstream_t *u)
 #endif
 
 
+//dns 解析域名
 static void
 ngx_http_upstream_resolve_handler(ngx_resolver_ctx_t *ctx)
 {

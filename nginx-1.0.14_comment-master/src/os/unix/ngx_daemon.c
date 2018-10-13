@@ -32,7 +32,7 @@ ngx_int_t ngx_daemon(ngx_log_t *log)
         return NGX_ERROR;
     }
 
-    umask(0);
+    umask(0);//设置了用户创建文件的默认 权限
 
     //打开文件/dev/null,使得其拥有守护进程的0，1，2。这样防止守护进程在终端设备上显示输出
     fd = open("/dev/null", O_RDWR);

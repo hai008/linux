@@ -860,7 +860,7 @@ ngx_http_core_run_phases(ngx_http_request_t *r)
 	/* 遍历phase上注册的所有handler，这里是以r->phase_handler为索引组成的链表 */
     while (ph[r->phase_handler].checker) {
 
-        rc = ph[r->phase_handler].checker(r, &ph[r->phase_handler]);
+        rc = ph[r->phase_handler].checker(r, &ph[r->phase_handler]);//CONTENT阶段调用ngx_http_core_content_phase
 		/* 如果一个checker返回ok，表示请求处理完毕，则后面的handler不会被调用 */
         if (rc == NGX_OK) {
             return;
@@ -1386,16 +1386,16 @@ ngx_http_core_content_phase(ngx_http_request_t *r,
 	* 而这里可以看到，如果r->content_handler存在则只会执行这一个handler，然后返回。
 	* 也就是说如果location设置了handler，则只会执行这一个content handler，不会执行其他的。
 	*/
-    if (r->content_handler) {
+    if (r->content_handler) {//upstream模块
         r->write_event_handler = ngx_http_request_empty_handler;
-        ngx_http_finalize_request(r, r->content_handler(r));
+        ngx_http_finalize_request(r, r->content_handler(r));//调用具体模块的处理函数  如ngx_http_fastcgi_handler
         return NGX_OK;
     }
 
     ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "content phase: %ui", r->phase_handler);
 
-    rc = ph->handler(r);//调用具体模块的处理函数  如ngx_http_fastcgi_handler
+    rc = ph->handler(r);
 
     if (rc != NGX_DECLINED) {
         ngx_http_finalize_request(r, rc);

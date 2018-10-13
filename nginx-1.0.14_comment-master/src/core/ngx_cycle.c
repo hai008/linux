@@ -1283,6 +1283,15 @@ ngx_reopen_files(ngx_cycle_t *cycle, ngx_uid_t user)
 #endif
 }
 
+//不会马上创建一个共享内存，它是先登记一下共享内存的使用信息，比如名称、大小等，然后在进程初始化的时候再进行共享内存的创建与初始化
+/*
+我们再看看ngx_shared_memory_add这个函数的实现，该函数先检查要添加的共享内存是否已存在，如果已存在，则直接返回，否则，创建一个新的。 
+1. 两个相同名字的共享内存大小要一样。 
+2. 两个相同名字的共享内存tag要一样。 
+3. 如果当前共享内存已经存在，则不需要再次添加。会返回同一个共享内存 
+4. 如果此共享内存不存在，则添加一个新的ngx_shm_zone_t 
+添加完后，会返回ngx_shm_zone_t，然后再设置init函数与data数据
+*/
 
 ngx_shm_zone_t *
 ngx_shared_memory_add(ngx_conf_t *cf, ngx_str_t *name, size_t size, void *tag)
