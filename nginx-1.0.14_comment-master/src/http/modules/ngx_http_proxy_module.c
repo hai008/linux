@@ -172,7 +172,11 @@ static ngx_conf_bitmask_t  ngx_http_proxy_next_upstream_masks[] = {
 
 ngx_module_t  ngx_http_proxy_module;
 
-
+/*
+注意在proxy中，只有当proxy_pass中包含有变量时，才会用到nginx自己的DNS解析。
+而且这里有一个需要特别注意的，如果proxy_pass中包含变量，那么nginx中就需要配
+置resolver来指定DNS服务器地址了，否则，将直接返回502错误。
+*/
 static ngx_command_t  ngx_http_proxy_commands[] = {
 
     { ngx_string("proxy_pass"),
@@ -585,6 +589,7 @@ ngx_http_proxy_handler(ngx_http_request_t *r)
 
     u = r->upstream;
 
+    // 这里的意思是，如果没有变量，就不进行变量解析
     if (plcf->proxy_lengths == NULL) {
         ctx->vars = plcf->vars;
         u->schema = plcf->vars.schema;
@@ -593,6 +598,9 @@ ngx_http_proxy_handler(ngx_http_request_t *r)
 #endif
 
     } else {
+        //只有当proxy_pass里面包含变量时，才解析变量，
+        //在ngx_http_proxy_eval中会添加域名解析的需求，
+        //请看ngx_http_proxy_eval的实现
         if (ngx_http_proxy_eval(r, ctx, plcf) != NGX_OK) {
             return NGX_HTTP_INTERNAL_SERVER_ERROR;
         }
@@ -605,8 +613,8 @@ ngx_http_proxy_handler(ngx_http_request_t *r)
 #if (NGX_HTTP_CACHE)
     u->create_key = ngx_http_proxy_create_key;
 #endif
-    u->create_request = ngx_http_proxy_create_request;
-    u->reinit_request = ngx_http_proxy_reinit_request;
+    u->create_request = ngx_http_proxy_create_request;//在ngx_http_upstream_init里回调
+    u->reinit_request = ngx_http_proxy_reinit_request;//链接由于异常原因失败，根据配置重连上游服务器
     u->process_header = ngx_http_proxy_process_status_line;
     u->abort_request = ngx_http_proxy_abort_request;
     u->finalize_request = ngx_http_proxy_finalize_request;
@@ -687,12 +695,12 @@ ngx_http_proxy_eval(ngx_http_request_t *r, ngx_http_proxy_ctx_t *ctx,
     ngx_memzero(&url, sizeof(ngx_url_t));
 
     url.url.len = proxy.len - add;
-    url.url.data = proxy.data + add;
+    url.url.data = proxy.data + add;// proxy为要转向的url
     url.default_port = port;
     url.uri_part = 1;
-    url.no_resolve = 1;
+    url.no_resolve = 1;// 注意这里设置的为不用解析域名
 
-    if (ngx_parse_url(r->pool, &url) != NGX_OK) {
+    if (ngx_parse_url(r->pool, &url) != NGX_OK) {// 由于有设置不用解析域名，所以在ngx_parse_url中就不会对域名进行解析
         if (url.err) {
             ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
                           "%s in upstream \"%V\"", url.err, &url.url);
@@ -723,12 +731,14 @@ ngx_http_proxy_eval(ngx_http_request_t *r, ngx_http_proxy_ctx_t *ctx,
 
     ngx_http_proxy_set_vars(&url, &ctx->vars);
 
-    u->resolved = ngx_pcalloc(r->pool, sizeof(ngx_http_upstream_resolved_t));
+    u->resolved = ngx_pcalloc(r->pool, sizeof(ngx_http_upstream_resolved_t));// 保存与需要解析域名相关的信息
     if (u->resolved == NULL) {
         return NGX_ERROR;
     }
 
     if (url.addrs && url.addrs[0].sockaddr) {
+      	// 如果域名已经是ip地址的格式，就保存起来，这样在upstream里面就不会再进行解析
+    	// 在upsteam模块里面会判断u->resolved->sockaddr是否为空
         u->resolved->sockaddr = url.addrs[0].sockaddr;
         u->resolved->socklen = url.addrs[0].socklen;
         u->resolved->naddrs = 1;

@@ -103,7 +103,7 @@ ngx_resolver_create(ngx_conf_t *cf, ngx_addr_t *addr)
         return NULL;
     }
 
-    cln->handler = ngx_resolver_cleanup;
+    cln->handler = ngx_resolver_cleanup;//设置清除函数
 
     r = ngx_calloc(sizeof(ngx_resolver_t), cf->log);
     if (r == NULL) {
@@ -116,19 +116,21 @@ ngx_resolver_create(ngx_conf_t *cf, ngx_addr_t *addr)
     if (r->event == NULL) {
         return NULL;
     }
-
+    //初始化保存域名节点信息的红黑树 
     ngx_rbtree_init(&r->name_rbtree, &r->name_sentinel,
                     ngx_resolver_rbtree_insert_value);
 
     ngx_rbtree_init(&r->addr_rbtree, &r->addr_sentinel,
                     ngx_rbtree_insert_value);
 
+    //初始化重传和过期队列
     ngx_queue_init(&r->name_resend_queue);
     ngx_queue_init(&r->addr_resend_queue);
 
     ngx_queue_init(&r->name_expire_queue);
     ngx_queue_init(&r->addr_expire_queue);
 
+    //设置超时事件的handler 
     r->event->handler = ngx_resolver_resend_handler;
     r->event->data = r;
     r->event->log = &cf->cycle->new_log;
@@ -147,7 +149,7 @@ ngx_resolver_create(ngx_conf_t *cf, ngx_addr_t *addr)
             return NULL;
         }
 
-        r->udp_connection = uc;
+        r->udp_connection = uc;//解析dns server的ip并设置到地址数组 
 
         uc->sockaddr = addr->sockaddr;
         uc->socklen = addr->socklen;
@@ -219,7 +221,8 @@ ngx_resolver_cleanup_tree(ngx_resolver_t *r, ngx_rbtree_t *tree)
 
 ngx_resolver_ctx_t *
 ngx_resolve_start(ngx_resolver_t *r, ngx_resolver_ctx_t *temp)
-{
+{//如果$host是ip地址, 直接设置ctx->quick = 1, 表示后续逻辑不需要走dns解析逻辑.
+//• 如果r->udp_connections 不存在, 返回NGX_NO_RESOLVER, 最终请求返回502
     in_addr_t            addr;
     ngx_resolver_ctx_t  *ctx;
 
@@ -241,7 +244,7 @@ ngx_resolve_start(ngx_resolver_t *r, ngx_resolver_ctx_t *temp)
     if (r->udp_connection == NULL) {
         return NGX_NO_RESOLVER;
     }
-
+    //ngx_resolver_ctx_t 每次解析都调用，没有pool
     ctx = ngx_resolver_calloc(r, sizeof(ngx_resolver_ctx_t));
 
     if (ctx) {
@@ -363,6 +366,7 @@ done:
 
 /* NGX_RESOLVE_A only */
 
+//执行dns解析
 static ngx_int_t
 ngx_resolve_name_locked(ngx_resolver_t *r, ngx_resolver_ctx_t *ctx)
 {
@@ -374,11 +378,11 @@ ngx_resolve_name_locked(ngx_resolver_t *r, ngx_resolver_ctx_t *ctx)
     ngx_resolver_node_t  *rn;
 
     hash = ngx_crc32_short(ctx->name.data, ctx->name.len);
-
+    //调用ngx_resolver_lookup_name查找域名节点rn是否在r->name_rbtree缓存节点中
     rn = ngx_resolver_lookup_name(r, &ctx->name, hash);
 
     if (rn) {
-
+        //判断rn->valid是否过期
         if (rn->valid >= ngx_time()) {
 
             ngx_log_debug0(NGX_LOG_DEBUG_CORE, r->log, 0, "resolve cached");
@@ -505,7 +509,7 @@ ngx_resolve_name_locked(ngx_resolver_t *r, ngx_resolver_ctx_t *ctx)
         ngx_rbtree_insert(&r->name_rbtree, &rn->node);
     }
 
-    rc = ngx_resolver_create_name_query(rn, ctx);
+    rc = ngx_resolver_create_name_query(rn, ctx);// 创建一个新的DNS查询请求
 
     if (rc == NGX_ERROR) {
         goto failed;
@@ -524,7 +528,7 @@ ngx_resolve_name_locked(ngx_resolver_t *r, ngx_resolver_ctx_t *ctx)
         return NGX_OK;
     }
 
-    if (ngx_resolver_send_query(r, rn) != NGX_OK) {
+    if (ngx_resolver_send_query(r, rn) != NGX_OK) {// 发送请求
         goto failed;
     }
 
@@ -539,7 +543,7 @@ ngx_resolve_name_locked(ngx_resolver_t *r, ngx_resolver_ctx_t *ctx)
         ctx->event->log = r->log;
         ctx->ident = -1;
 
-        ngx_add_timer(ctx->event, ctx->timeout);
+        ngx_add_timer(ctx->event, ctx->timeout);// 添加查询超时事件
     }
 
     if (ngx_queue_empty(&r->name_resend_queue)) {

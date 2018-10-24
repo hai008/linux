@@ -81,13 +81,14 @@ typedef struct {
 
     /* TODO: DNS peers balancer */
     /* STUB */
-    ngx_udp_connection_t     *udp_connection;
+    ngx_udp_connection_t     *udp_connection;/// 用于连接dns服务器
 
     ngx_log_t                *log;
 
     /* ident must be after 3 pointers */
     ngx_int_t                 ident;
 
+    // 保存了本地缓存的DNS数据
     ngx_rbtree_t              name_rbtree;
     ngx_rbtree_node_t         name_sentinel;
 
@@ -130,7 +131,7 @@ struct ngx_resolver_ctx_s {
     void                     *data;
     ngx_msec_t                timeout;
 
-    ngx_uint_t                quick;  /* unsigned  quick:1; */
+    ngx_uint_t                quick;  /* unsigned  quick:1; */  //1 :表示后续逻辑不需要走dns解析逻辑.
     ngx_uint_t                recursion;
     ngx_event_t              *event;
 };

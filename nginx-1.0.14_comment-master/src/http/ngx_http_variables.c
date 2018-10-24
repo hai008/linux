@@ -1917,6 +1917,7 @@ ngx_http_variables_add_core_vars(ngx_conf_t *cf)
         return NGX_ERROR;
     }
 
+    //添加变量，如http里的arg_***    cookie_***
     for (v = ngx_http_core_variables; v->name.len; v++) {
         rc = ngx_hash_add_key(cmcf->variables_keys, &v->name, v,
                               NGX_HASH_READONLY_KEY);

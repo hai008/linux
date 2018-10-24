@@ -162,7 +162,7 @@ ngx_set_inherited_sockets(ngx_cycle_t *cycle)
         ls[i].backlog = NGX_LISTEN_BACKLOG;
 
         olen = sizeof(int);
-
+        //获取接受缓存区
         if (getsockopt(ls[i].fd, SOL_SOCKET, SO_RCVBUF, (void *) &ls[i].rcvbuf,
                        &olen)
             == -1)
@@ -479,6 +479,7 @@ ngx_configure_listening_sockets(ngx_cycle_t *cycle)
         ls[i].log = *ls[i].logp;
 
         if (ls[i].rcvbuf != -1) {
+            //设置接受缓冲区
             if (setsockopt(ls[i].fd, SOL_SOCKET, SO_RCVBUF,
                            (const void *) &ls[i].rcvbuf, sizeof(int))
                 == -1)

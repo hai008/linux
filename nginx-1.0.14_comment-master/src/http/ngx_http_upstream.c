@@ -556,7 +556,7 @@ ngx_http_upstream_init_request(ngx_http_request_t *r)
 
     } else {
 
-        if (u->resolved->sockaddr) {
+        if (u->resolved->sockaddr) {// // 如果已经是ip地址格式了，就不需要再进行解析
 
             if (ngx_http_upstream_create_round_robin_peer(r, u->resolved)
                 != NGX_OK)
@@ -571,7 +571,7 @@ ngx_http_upstream_init_request(ngx_http_request_t *r)
             return;
         }
 
-        //在这里host应该为一个upstream组的名字  
+        //在这里host应该为一个upstream组的名字   // 接下来就要开始查找域名
         host = &u->resolved->host;
 
         umcf = ngx_http_get_module_main_conf(r, ngx_http_upstream_module);
@@ -601,7 +601,7 @@ ngx_http_upstream_init_request(ngx_http_request_t *r)
         }
 
         temp.name = *host;
-        //下面这部分需要进行域名解析
+        //下面这部分需要进行域名解析 // 初始化域名解析器
         ctx = ngx_resolve_start(clcf->resolver, &temp);
         if (ctx == NULL) {
             ngx_http_upstream_finalize_request(r, u,

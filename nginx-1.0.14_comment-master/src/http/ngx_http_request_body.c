@@ -434,7 +434,7 @@ ngx_http_write_request_body(ngx_http_request_t *r, ngx_chain_t *body)
     return NGX_OK;
 }
 
-
+//丢弃请求体,因为访问memcached等后端服务器不需要请求体
 ngx_int_t
 ngx_http_discard_request_body(ngx_http_request_t *r)
 {

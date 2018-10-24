@@ -1333,7 +1333,7 @@ ngx_utf8_cpystrn(u_char *dst, u_char *src, size_t n, size_t len)
     return dst;
 }
 
-
+//对非普通字符进行编码转换
 uintptr_t
 ngx_escape_uri(u_char *dst, u_char *src, size_t size, ngx_uint_t type)
 {
