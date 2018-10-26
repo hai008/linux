@@ -10,6 +10,7 @@
 
 
 #include <ngx_config.h>
+#include "my_debug.h"
 
 
 typedef struct ngx_module_s          ngx_module_t;

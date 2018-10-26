@@ -40,6 +40,7 @@ static ngx_int_t ngx_http_drizzle_input_filter_init(void *data);
 static ngx_int_t ngx_http_drizzle_input_filter(void *data, ssize_t bytes);
 
 
+//请求时根据localtion定位到
 ngx_int_t
 ngx_http_drizzle_handler(ngx_http_request_t *r)
 {
@@ -92,7 +93,7 @@ ngx_http_drizzle_handler(ngx_http_request_t *r)
      || nginx_version >= 8007)
 
     dd("creating upstream.......");
-    if (ngx_http_upstream_create(r) != NGX_OK) {
+    if (ngx_http_upstream_create(r) != NGX_OK) {//创建upstream对象
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
 
@@ -116,7 +117,7 @@ ngx_http_drizzle_handler(ngx_http_request_t *r)
 
 #endif
 
-    if (dlcf->complex_target) {
+    if (dlcf->complex_target) {//conf.conf配置里有变量
         /* variables used in the drizzle_pass directive */
         if (ngx_http_complex_value(r, dlcf->complex_target, &target)
             != NGX_OK)
@@ -135,7 +136,7 @@ ngx_http_drizzle_handler(ngx_http_request_t *r)
         url.port = 0;
         url.no_resolve = 1;
 
-        dlcf->upstream.upstream = ngx_http_upstream_drizzle_add(r, &url);
+        dlcf->upstream.upstream = ngx_http_upstream_drizzle_add(r, &url);//更新解析的url host等
 
         if (dlcf->upstream.upstream == NULL) {
             ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
@@ -163,9 +164,15 @@ ngx_http_drizzle_handler(ngx_http_request_t *r)
 
     u->conf = &dlcf->upstream;
 
+     /* 构造发往上游服务器的请求内容 */
     u->create_request = ngx_http_drizzle_create_request;
     u->reinit_request = ngx_http_drizzle_reinit_request;
+
+    /* 收到上游服务器的响应后就会回调process_header方法。如果process_header返回NGX_AGAIN，那么是在告诉upstream还没有收到完整的响应包头，
+    此时，对于本次upstream请求来说，再次接受到上游服务器发来的TCP流时，还会调用process_header方法处理，直到process_header函数返回非NGX_AGAIN
+    值这一阶段才会停止 */
     u->process_header = ngx_http_drizzle_process_header;
+
     u->abort_request = ngx_http_drizzle_abort_request;
     u->finalize_request = ngx_http_drizzle_finalize_request;
 
@@ -182,9 +189,10 @@ ngx_http_drizzle_handler(ngx_http_request_t *r)
 
     dd("XXX connect timeout: %d", (int) dlcf->upstream.connect_timeout);
 
-    ngx_http_upstream_dbd_init(r);
+    ngx_http_upstream_dbd_init(r);//初始化，建立连接，并接受数据等操作
 
     /* override the read/write event handler to our own */
+    //与下游服务的回调函数
     u->write_event_handler = ngx_http_drizzle_wev_handler;
     u->read_event_handler  = ngx_http_drizzle_rev_handler;
 

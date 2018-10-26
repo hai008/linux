@@ -196,6 +196,7 @@ ngx_http_compile_complex_value(ngx_http_compile_complex_value_t *ccv)
     sc.conf_prefix = ccv->conf_prefix;
     sc.root_prefix = ccv->root_prefix;
 
+    //进行脚本解析编译，结果会反应到ccv->complex_value里面的。
     if (ngx_http_script_compile(&sc) != NGX_OK) {
         return NGX_ERROR;
     }

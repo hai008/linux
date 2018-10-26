@@ -5889,7 +5889,7 @@ not_supported:
     return NGX_CONF_ERROR;
 }
 
-
+////ngx_http_upstream_add配置上游服务器列表，返回upstream框架的配置数据结构
 ngx_http_upstream_srv_conf_t *
 ngx_http_upstream_add(ngx_conf_t *cf, ngx_url_t *u, ngx_uint_t flags)
 {

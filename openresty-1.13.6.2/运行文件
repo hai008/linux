@@ -4,3 +4,4 @@ vim /home/l/openresty-1.13.6.2/build/nginx-1.13.6/conf/nginx.conf
 
 
 
+/usr/local/nginx/sbin/mydebug.log

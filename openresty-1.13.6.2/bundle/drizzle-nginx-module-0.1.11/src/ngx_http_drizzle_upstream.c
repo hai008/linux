@@ -391,7 +391,7 @@ ngx_http_upstream_drizzle_init(ngx_conf_t *cf,
     return NGX_OK;
 }
 
-
+//接受到请求，调用peer.init时会调用该函数
 static ngx_int_t
 ngx_http_upstream_drizzle_init_peer(ngx_http_request_t *r,
     ngx_http_upstream_srv_conf_t *uscf)
@@ -734,7 +734,7 @@ ngx_http_upstream_drizzle_get_peer(ngx_peer_connection_t *pc, void *data)
         goto invalid;
     }
 
-    c = ngx_get_connection(fd, pc->log);
+    c = ngx_get_connection(fd, pc->log);//监听drizzle和数据库连接的套接字
     if (c == NULL) {
         ngx_log_error(NGX_LOG_ERR, pc->log, 0,
                       "drizzle: failed to get a free nginx connection");

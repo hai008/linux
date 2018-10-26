@@ -9,6 +9,8 @@
 #include <ngx_core.h>
 #include <nginx.h>
 
+#define MY_DEBUG_MAIN 1
+
 
 static void ngx_show_version_info(void);
 static ngx_int_t ngx_add_inherited_sockets(ngx_cycle_t *cycle);
@@ -201,6 +203,8 @@ main(int argc, char *const *argv)
     ngx_cycle_t      *cycle, init_cycle;
     ngx_conf_dump_t  *cd;
     ngx_core_conf_t  *ccf;
+	
+	enable_my_debug(); 
 
     ngx_debug_init();
 

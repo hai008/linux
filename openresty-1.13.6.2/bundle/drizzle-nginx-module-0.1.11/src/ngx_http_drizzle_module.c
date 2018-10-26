@@ -478,7 +478,7 @@ ngx_http_drizzle_pass(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
     clcf = ngx_http_conf_get_module_loc_conf(cf, ngx_http_core_module);
 
-    clcf->handler = ngx_http_drizzle_handler;
+    clcf->handler = ngx_http_drizzle_handler;//请求时的回调函数
 
     if (clcf->name.data[clcf->name.len - 1] == '/') {
         clcf->auto_redirect = 1;
@@ -486,7 +486,7 @@ ngx_http_drizzle_pass(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
     value = cf->args->elts;
 
-    n = ngx_http_script_variables_count(&value[1]);
+    n = ngx_http_script_variables_count(&value[1]);//返回配置里的变量个数
     if (n) {
         dlcf->complex_target = ngx_palloc(cf->pool,
                                           sizeof(ngx_http_complex_value_t));
@@ -513,7 +513,7 @@ ngx_http_drizzle_pass(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     url.url = value[1];
     url.no_resolve = 1;
 
-    dlcf->upstream.upstream = ngx_http_upstream_add(cf, &url, 0);
+    dlcf->upstream.upstream = ngx_http_upstream_add(cf, &url, 0);////ngx_http_upstream_add配置上游服务器列表，返回upstream框架的配置数据结构
 
     if (dlcf->upstream.upstream == NULL) {
         return NGX_CONF_ERROR;
