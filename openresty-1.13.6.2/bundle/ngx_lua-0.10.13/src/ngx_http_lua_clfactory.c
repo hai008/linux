@@ -697,7 +697,7 @@ ngx_http_lua_clfactory_loadfile(lua_State *L, const char *filename)
     }
 
     lf.sent_begin = lf.sent_end = 0;
-    status = lua_load(L, ngx_http_lua_clfactory_getF, &lf,
+    status = lua_load(L, ngx_http_lua_clfactory_getF, &lf,//加载lua 脚本文件
                       lua_tostring(L, -1));
 
     readstatus = ferror(lf.f);

@@ -1,0 +1,103 @@
+----------------------------------
+file=io.input("test.txt")
+repeat 
+	line=io.read()
+	if nil==line then
+		break
+	end
+	print(line)
+until(false)
+io.close(file)
+------------------------------------
+
+
+------------------------------------
+local set1={10,20,30}
+local set2={20,40,50}
+local union = function(self, another)
+	local set={}
+	local result={}
+	for i,j in pairs(self)
+		do
+			set[j] = true
+	end
+	
+	for i,j in pairs(another)
+		do	
+			set[j] = true
+	end
+	
+	for i,j in pairs(set)
+		do
+			table.insert(result,i)
+	end
+	
+	return result
+	
+end
+
+setmetatable(set1, {__add = union})
+
+local set3 =set1+set2
+for _, j in pairs(set3)
+	do
+		io.write(j.." ")
+end
+-----------------------------------------
+
+
+
+-----------------------------------------
+arr={1,2,3,4}
+arr=setmetatable(arr, {__tostring = function(self)
+	local result= '{'
+	local sep = ''
+	for _,i in pairs(self)
+		do
+			result=result .. sep .. i
+			sep = ', '
+	end
+	result = result .. '}'
+	return result
+end})
+print(arr)
+----------------------------------------------
+
+object=setmetatable({}, {__metatable="you cannot access here"})
+print(getmetatable(object))
+setmetatable(object,{}) --编译错误
+-------------------------------------------------
+
+
+----------------------------------------------
+local _M ={}
+local mt = {__index=_M}
+function _M.deposit(self, v)
+	self.balance = self.balance +v
+end
+
+function _M.withdraw(self, v)
+	if self.balance > v then
+		self.balance = self.balance - v
+	else
+		error("insufficient funds")
+	end
+end
+function _M.new(self, balance)
+	balance = balance or 0
+	return setmetatable({balance = balance}, mt)
+end
+return _M
+
+----------------------------------------
+
+local account = require("account")
+local a = account:new()
+a:deposit(100)
+local b = account:new()
+b:deposit(30)
+print(a.balance)
+print(b.balance)
+
+
+
