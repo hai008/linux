@@ -169,7 +169,7 @@ ngx_http_rewrite_handler(ngx_http_request_t *r)
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
 
-    e->ip = rlcf->codes->elts;
+    e->ip = rlcf->codes->elts;//ngx_http_script_value_code
     e->request = r;
     e->quote = 1;
     e->log = rlcf->log;
@@ -177,7 +177,7 @@ ngx_http_rewrite_handler(ngx_http_request_t *r)
 
     while (*(uintptr_t *) e->ip) {
         code = *(ngx_http_script_code_pt *) e->ip;
-        code(e);
+        code(e);//执行指令方法时，该方法负责移动ip指针
     }
 
     if (e->status < NGX_HTTP_BAD_REQUEST) {
@@ -953,7 +953,7 @@ ngx_http_rewrite_set(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     if (vcode == NULL) {
         return NGX_CONF_ERROR;
     }
-
+    //设置脚本解析函数
     vcode->code = ngx_http_script_set_var_code;
     vcode->index = (uintptr_t) index;
 

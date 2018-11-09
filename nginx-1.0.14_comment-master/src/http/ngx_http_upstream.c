@@ -1212,6 +1212,7 @@ ngx_http_upstream_connect(ngx_http_request_t *r, ngx_http_upstream_t *u)
     u->request_sent = 0;
 
     if (rc == NGX_AGAIN) {
+        //链接还没建立成功，将链接的写事件添加到定时器中
         ngx_add_timer(c->write, u->conf->connect_timeout);
         return;
     }
@@ -1225,7 +1226,7 @@ ngx_http_upstream_connect(ngx_http_request_t *r, ngx_http_upstream_t *u)
 
 #endif
 
-    ngx_http_upstream_send_request(r, u);
+    ngx_http_upstream_send_request(r, u);//发送请求
 }
 
 

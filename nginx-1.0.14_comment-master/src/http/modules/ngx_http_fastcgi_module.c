@@ -605,7 +605,8 @@ ngx_http_fastcgi_handler(ngx_http_request_t *r)
     if (u->pipe == NULL) {
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
-
+    
+    //处理包体
     u->pipe->input_filter = ngx_http_fastcgi_input_filter;
     u->pipe->input_ctx = r;
 
@@ -1147,7 +1148,7 @@ ngx_http_fastcgi_reinit_request(ngx_http_request_t *r)
     return NGX_OK;
 }
 
-
+//解析上游服务器传过来的head
 static ngx_int_t
 ngx_http_fastcgi_process_header(ngx_http_request_t *r)
 {
