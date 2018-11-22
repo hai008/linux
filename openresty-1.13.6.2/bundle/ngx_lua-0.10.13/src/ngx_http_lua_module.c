@@ -666,13 +666,14 @@ ngx_http_lua_init(ngx_conf_t *cf)
 
     cmcf = ngx_http_conf_get_module_main_conf(cf, ngx_http_core_module);
 
+    //注册各个阶段的处理函数
     if (lmcf->requires_rewrite) {
         h = ngx_array_push(&cmcf->phases[NGX_HTTP_REWRITE_PHASE].handlers);
         if (h == NULL) {
             return NGX_ERROR;
         }
 
-        *h = ngx_http_lua_rewrite_handler;
+        *h = ngx_http_lua_rewrite_handler;//rewrite阶段
     }
 
     if (lmcf->requires_access) {
@@ -681,7 +682,7 @@ ngx_http_lua_init(ngx_conf_t *cf)
             return NGX_ERROR;
         }
 
-        *h = ngx_http_lua_access_handler;
+        *h = ngx_http_lua_access_handler;//access阶段
     }
 
     dd("requires log: %d", (int) lmcf->requires_log);
@@ -699,7 +700,7 @@ ngx_http_lua_init(ngx_conf_t *cf)
                         (arr->nelts - 1) * sizeof(ngx_http_handler_pt));
         }
 
-        *h = ngx_http_lua_log_handler;
+        *h = ngx_http_lua_log_handler;//log阶段
     }
 
     if (multi_http_blocks || lmcf->requires_header_filter) {
@@ -744,6 +745,7 @@ ngx_http_lua_init(ngx_conf_t *cf)
                                   ngx_http_lua_hash_literal("content-length");
         ngx_http_lua_location_hash = ngx_http_lua_hash_literal("location");
 
+        //初始化lua vm
         lmcf->lua = ngx_http_lua_init_vm(NULL, cf->cycle, cf->pool, lmcf,
                                          cf->log, NULL);
         if (lmcf->lua == NULL) {

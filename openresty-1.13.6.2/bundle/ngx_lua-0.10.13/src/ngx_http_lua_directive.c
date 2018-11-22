@@ -579,7 +579,8 @@ ngx_http_lua_access_by_lua(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     dd("enter");
 
     /*  must specify a content handler */
-    if (cmd->post == NULL) {
+
+    if (cmd->post == NULL) {//ngx_http_lua_access_handler_inline
         return NGX_CONF_ERROR;
     }
 

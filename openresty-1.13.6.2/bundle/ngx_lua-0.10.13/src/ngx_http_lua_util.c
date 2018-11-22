@@ -181,8 +181,15 @@ ngx_http_lua_set_path(ngx_cycle_t *cycle, lua_State *L, int tab_idx,
 void
 ngx_http_lua_create_new_globals_table(lua_State *L, int narr, int nrec)
 {
+    //创建一张新的空表压栈。参数narr建议了这张表作为序列使用时会有多少个元素；
+    //参数nrec建议了这张表可能拥有多少序列之外的元素。
+    //Lua会使用这些建议来预分配这张新表。如果你知道这张表用途的更多信息，预分配可以提高性能。
+    //否则，你可以使用函数lua_newtable 。
     lua_createtable(L, narr, nrec + 1);
-    lua_pushvalue(L, -1);
+    lua_pushvalue(L, -1);//把栈上给定索引处的元素作一个副本压栈。
+    //void lua_setfield (lua_State *L, int index, const char *k);
+    //做一个等价于 t[k] = v 的操作，这里t是给出的索引处的值，而v是栈顶的那个值。
+    //这个函数将把这个值弹出栈。 跟在 Lua 中一样，这个函数可能触发一个"newindex" 事件的元方法。
     lua_setfield(L, -2, "_G");
 }
 
@@ -316,6 +323,9 @@ ngx_http_lua_new_thread(ngx_http_request_t *r, lua_State *L, int *ref)
     lua_pushlightuserdata(L, &ngx_http_lua_coroutines_key);
     lua_rawget(L, LUA_REGISTRYINDEX);
 
+//创建一条新线程，并将其压栈，并返回维护这个线程的lua_State 指针。
+//这个函数返回的新线程共享原线程的全局环境，但是它有独立的运行栈。//
+//没有显式的函数可以用来关闭或销毁掉一个线程。线程跟其它Lua对象一样是垃圾收集的条目之一。
     co = lua_newthread(L);
 
     /*  {{{ inherit coroutine's globals to main thread's globals table
@@ -742,7 +752,7 @@ ngx_http_lua_inject_ngx_api(lua_State *L, ngx_http_lua_main_conf_t *lmcf,
     ngx_http_lua_inject_socket_udp_api(log, L);
     ngx_http_lua_inject_uthread_api(log, L);
     ngx_http_lua_inject_timer_api(L);
-    ngx_http_lua_inject_config_api(L);
+    ngx_http_lua_inject_config_api(L);//
     ngx_http_lua_inject_worker_api(L);
 
     ngx_http_lua_inject_misc_api(L);
@@ -961,7 +971,7 @@ ngx_http_lua_run_thread(lua_State *L, ngx_http_request_t *r,
                    r->main->count);
 
     /* set Lua VM panic handler */
-    lua_atpanic(L, ngx_http_lua_atpanic);
+    lua_atpanic(L, ngx_http_lua_atpanic);//设置一个新的 panic 函数，并返回之前设置的那个。异常函数？
 
     dd("ctx = %p", ctx);
 
@@ -1007,7 +1017,7 @@ ngx_http_lua_run_thread(lua_State *L, ngx_http_request_t *r,
             ngx_http_lua_assert(orig_coctx->co_top + nrets
                                 == lua_gettop(orig_coctx->co));
 
-            rv = lua_resume(orig_coctx->co, nrets);
+            rv = lua_resume(orig_coctx->co, nrets);//通过lua_resume执行协程中的函数
 
 #if (NGX_PCRE)
             /* XXX: work-around to nginx regex subsystem */
@@ -1025,7 +1035,7 @@ ngx_http_lua_run_thread(lua_State *L, ngx_http_request_t *r,
                            "lua resume returned %d", rv);
 
             switch (rv) {
-            case LUA_YIELD:
+            case LUA_YIELD:///协程被挂起
                 /*  yielded, let event handler do the rest job */
                 /*  FIXME: add io cmd dispatcher here */
 
@@ -3730,7 +3740,7 @@ ngx_http_lua_close_fake_connection(ngx_connection_t *c)
     }
 }
 
-
+//生成一个lua_State对象
 lua_State *
 ngx_http_lua_init_vm(lua_State *parent_vm, ngx_cycle_t *cycle,
     ngx_pool_t *pool, ngx_http_lua_main_conf_t *lmcf, ngx_log_t *log,
@@ -3778,12 +3788,12 @@ ngx_http_lua_init_vm(lua_State *parent_vm, ngx_cycle_t *cycle,
         *pcln = cln;
     }
 
-    if (lmcf->preload_hooks) {
+    if (lmcf->preload_hooks) {//预先加载lua模块 如package.preload['resty.redis']
 
         /* register the 3rd-party module's preload hooks */
 
-        lua_getglobal(L, "package");
-        lua_getfield(L, -1, "preload");
+        lua_getglobal(L, "package");//取得一个变量的值 将table读取到栈中
+        lua_getfield(L, -1, "preload");//读取table中字段的值，将字段的值读取到栈中；
 
         hook = lmcf->preload_hooks->elts;
 

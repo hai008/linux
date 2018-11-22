@@ -182,6 +182,7 @@ struct ngx_stream_lua_main_conf_s {
 
     ngx_array_t         *shdict_zones; /* shm zones of "shdict" */
 
+    //预先加载lua模块 如package.preload['resty.redis']
     ngx_array_t         *preload_hooks; /* of ngx_stream_lua_preload_hook_t */
 
     ngx_flag_t           postponed_to_preread_phase_end;

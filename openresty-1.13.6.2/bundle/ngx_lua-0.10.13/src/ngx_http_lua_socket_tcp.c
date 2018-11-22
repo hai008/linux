@@ -202,21 +202,56 @@ ngx_http_lua_inject_socket_tcp_api(ngx_log_t *log, lua_State *L)
 {
     ngx_int_t         rc;
 
+    //void lua_createtable (lua_State *L, int narr, int nrec);
+    //创建一个新的table并将之放在栈顶.narr是该table数组部分的长度,nrec是该table hash部分的长度.
+    //当我们确切的知道要放多少元素到table的时候,使用这个函数,lua可以预分配一些内存,提升性能.
+    //如果不确定要存放多少元素可以使用 lua_newtable 函数来创建table.
     lua_createtable(L, 0, 4 /* nrec */);    /* ngx.socket */
 
-    lua_pushcfunction(L, ngx_http_lua_socket_tcp);
+
+    lua_pushcfunction(L, ngx_http_lua_socket_tcp);//栈顶
+    ////////////////////////////////
+    //    
+    //   2 -1    ngx_http_lua_socket_tcp
+    //   1 -2    {}   
+    //////////////////////////////////////
     lua_pushvalue(L, -1);
+    ////////////////////////////////
+    //    
+    //   3 -1    ngx_http_lua_socket_tcp
+    //   2 -2    ngx_http_lua_socket_tcp
+    //   1 -3    {}   
+    //////////////////////////////////////
+
+
+
     lua_setfield(L, -3, "tcp");
+    ////////////////////////////////
+    //    
+    //   2 -1    ngx_http_lua_socket_tcp
+    //   1 -2    {"tcp"=ngx_http_lua_socket_tcp}   
+    //////////////////////////////////////
+
+
+
     lua_setfield(L, -2, "stream");
+    ////////////////////////////////
+    //    
+    //   1 -1    {"tcp"=ngx_http_lua_socket_tcp, "stream" = ngx_http_lua_socket_tcp}   
+    //////////////////////////////////////
+
 
     {
         const char  buf[] = "local sock = ngx.socket.tcp()"
                             " local ok, err = sock:connect(...)"
                             " if ok then return sock else return nil, err end";
-
-        rc = luaL_loadbuffer(L, buf, sizeof(buf) - 1, "=ngx.socket.connect");
+        //载入并编译内存中的一段Lua代码，然后作为一个代码块(称为chunk)压入栈中/
+        rc = luaL_loadbuffer(L, buf, sizeof(buf) - 1, "=ngx.socket.connect");//
     }
-
+    ////////////////////////////////
+    //   2 -1    "local sock ...." 
+    //   1 -2    {"tcp"=ngx_http_lua_socket_tcp, "stream" = ngx_http_lua_socket_tcp}   
+    //////////////////////////////////////
     if (rc != NGX_OK) {
         ngx_log_error(NGX_LOG_CRIT, log, 0,
                       "failed to load Lua code for ngx.socket.connect(): %i",
@@ -224,56 +259,197 @@ ngx_http_lua_inject_socket_tcp_api(ngx_log_t *log, lua_State *L)
 
     } else {
         lua_setfield(L, -2, "connect");
+        ////////////////////////////////
+        //  
+        //   1 -1    {"tcp"=ngx_http_lua_socket_tcp, "stream" = ngx_http_lua_socket_tcp,  "connect"="local sock ...."}   
+        //////////////////////////////////////
     }
 
     lua_setfield(L, -2, "socket");
-
+    ////////////////////////////////
+    //  
+    //   1 -1    {"socket"={"tcp"=ngx_http_lua_socket_tcp, "stream" = ngx_http_lua_socket_tcp,  "connect"="local sock ...."}}   
+    //////////////////////////////////////
     /* {{{req socket object metatable */
     lua_pushlightuserdata(L, &ngx_http_lua_req_socket_metatable_key);
     lua_createtable(L, 0 /* narr */, 5 /* nrec */);
+    ////////////////////////////////
+    //   3  -1    {}
+    //   2  -2    ngx_http_lua_req_socket_metatable_key
+    //   1  -3    {"socket"={"tcp"=ngx_http_lua_socket_tcp, "stream" = ngx_http_lua_socket_tcp,  "connect"="local sock ...."}}   
+    //////////////////////////////////////
 
     lua_pushcfunction(L, ngx_http_lua_socket_tcp_receive);
+
+    ////////////////////////////////
+    //   4  -1    ngx_http_lua_socket_tcp_receive
+    //   3  -2    {}
+    //   2  -3    ngx_http_lua_req_socket_metatable_key
+    //   1  -4    {"socket"={"tcp"=ngx_http_lua_socket_tcp, "stream" = ngx_http_lua_socket_tcp,  "connect"="local sock ...."}}   
+    //////////////////////////////////////
+
     lua_setfield(L, -2, "receive");
+    ////////////////////////////////
+    //   3  -1    {"receive"=ngx_http_lua_socket_tcp_receive}
+    //   2  -2    ngx_http_lua_req_socket_metatable_key
+    //   1  -3    {"socket"={"tcp"=ngx_http_lua_socket_tcp, "stream" = ngx_http_lua_socket_tcp,  "connect"="local sock ...."}}   
+    //////////////////////////////////////
+
 
     lua_pushcfunction(L, ngx_http_lua_socket_tcp_receiveuntil);
     lua_setfield(L, -2, "receiveuntil");
+    ////////////////////////////////
+    //   3  -1    {"receive"=ngx_http_lua_socket_tcp_receive, "receiveuntil"=ngx_http_lua_socket_tcp_receiveuntil}
+    //   2  -2    ngx_http_lua_req_socket_metatable_key
+    //   1  -3    {"socket"={"tcp"=ngx_http_lua_socket_tcp, "stream" = ngx_http_lua_socket_tcp,  "connect"="local sock ...."}}   
+    //////////////////////////////////////
 
     lua_pushcfunction(L, ngx_http_lua_socket_tcp_settimeout);
     lua_setfield(L, -2, "settimeout"); /* ngx socket mt */
+    ////////////////////////////////
+    //   3  -1    {"receive"=ngx_http_lua_socket_tcp_receive, "receiveuntil"=ngx_http_lua_socket_tcp_receiveuntil, "settimeout"=ngx_http_lua_socket_tcp_settimeout}
+    //   2  -2    ngx_http_lua_req_socket_metatable_key
+    //   1  -3    {"socket"={"tcp"=ngx_http_lua_socket_tcp, "stream" = ngx_http_lua_socket_tcp,  "connect"="local sock ...."}}   
+    //////////////////////////////////////
 
     lua_pushcfunction(L, ngx_http_lua_socket_tcp_settimeouts);
     lua_setfield(L, -2, "settimeouts"); /* ngx socket mt */
 
-    lua_pushvalue(L, -1);
-    lua_setfield(L, -2, "__index");
+   ////////////////////////////////
+    //   3  -1    {"receive"=ngx_http_lua_socket_tcp_receive, "receiveuntil"=ngx_http_lua_socket_tcp_receiveuntil, "settimeout"=ngx_http_lua_socket_tcp_settimeout, "settimeouts"=ngx_http_lua_socket_tcp_settimeouts}
+    //   2  -2    ngx_http_lua_req_socket_metatable_key
+    //   1  -3    {"socket"={"tcp"=ngx_http_lua_socket_tcp, "stream" = ngx_http_lua_socket_tcp,  "connect"="local sock ...."}}   
+    //////////////////////////////////////
 
-    lua_rawset(L, LUA_REGISTRYINDEX);
+
+    lua_pushvalue(L, -1);
+    ////////////////////////////////
+    //   4  -1    {"receive"=ngx_http_lua_socket_tcp_receive, "receiveuntil"=ngx_http_lua_socket_tcp_receiveuntil, "settimeout"=ngx_http_lua_socket_tcp_settimeout, "settimeouts"=ngx_http_lua_socket_tcp_settimeouts}
+    //   3  -2    {"receive"=ngx_http_lua_socket_tcp_receive, "receiveuntil"=ngx_http_lua_socket_tcp_receiveuntil, "settimeout"=ngx_http_lua_socket_tcp_settimeout, "settimeouts"=ngx_http_lua_socket_tcp_settimeouts}
+    //   2  -3    ngx_http_lua_req_socket_metatable_key
+    //   1  -4    {"socket"={"tcp"=ngx_http_lua_socket_tcp, "stream" = ngx_http_lua_socket_tcp,  "connect"="local sock ...."}}   
+    //////////////////////////////////////
+    lua_setfield(L, -2, "__index");
+   ////////////////////////////////
+    //   3  -1    {"__index"=this, "receive"=ngx_http_lua_socket_tcp_receive, "receiveuntil"=ngx_http_lua_socket_tcp_receiveuntil, "settimeout"=ngx_http_lua_socket_tcp_settimeout, "settimeouts"=ngx_http_lua_socket_tcp_settimeouts}
+    //   2  -2    ngx_http_lua_req_socket_metatable_key
+    //   1  -3    {"socket"={"tcp"=ngx_http_lua_socket_tcp, "stream" = ngx_http_lua_socket_tcp,  "connect"="local sock ...."}}   
+    //////////////////////////////////////
+
+
+    //lua_rawset和lua_settable(lua_State* L, int index)类似，但是直接赋值
+    //lua_settable就是把表在lua堆栈中的值弹出来，index 是table 在堆栈中的位置，
+    //假如 table 在 -3, 则key 应该是 -2，value 是 -1
+    //相当于 table[key] = value.
+
+    //table[]
+    //////////////////////////////////////////////
+    //
+    //
+    //
+    //  1   -1     {"socket"={"tcp"=ngx_http_lua_socket_tcp, "stream" = ngx_http_lua_socket_tcp,  "connect"="local sock ....", "ngx_http_lua_req_socket_metatable_key" = {"__index"=this, "receive"=ngx_http_lua_socket_tcp_receive, "receiveuntil"=ngx_http_lua_socket_tcp_receiveuntil, "settimeout"=ngx_http_lua_socket_tcp_settimeout, "settimeouts"=ngx_http_lua_socket_tcp_settimeouts}}}
+    //////////////////////////////////////////////
+    lua_rawset(L, LUA_REGISTRYINDEX);//直接赋值  LUA_REGISTRYINDEX是Lua注册表的伪索引
     /* }}} */
+
+
 
     /* {{{raw req socket object metatable */
     lua_pushlightuserdata(L, &ngx_http_lua_raw_req_socket_metatable_key);
     lua_createtable(L, 0 /* narr */, 6 /* nrec */);
+    //////////////////////////////////////////////////////////////////////
+    //
+    //
+    //
+    //             {}
+    //             ngx_http_lua_raw_req_socket_metatable_key
+    //  1   -1     {"socket"={"tcp"=ngx_http_lua_socket_tcp, "stream" = ngx_http_lua_socket_tcp,  "connect"="local sock ....", "ngx_http_lua_req_socket_metatable_key" = {"__index"=this, "receive"=ngx_http_lua_socket_tcp_receive, "receiveuntil"=ngx_http_lua_socket_tcp_receiveuntil, "settimeout"=ngx_http_lua_socket_tcp_settimeout, "settimeouts"=ngx_http_lua_socket_tcp_settimeouts}}}
+    //////////////////////////////////////////////////////////////////
+
 
     lua_pushcfunction(L, ngx_http_lua_socket_tcp_receive);
     lua_setfield(L, -2, "receive");
 
+    //////////////////////////////////////////////////////////////////////
+    //
+    //
+    //
+    //             { "receive"=ngx_http_lua_socket_tcp_receive}
+    //             ngx_http_lua_raw_req_socket_metatable_key
+    //  1   -1     {"socket"={"tcp"=ngx_http_lua_socket_tcp, "stream" = ngx_http_lua_socket_tcp,  "connect"="local sock ....", "ngx_http_lua_req_socket_metatable_key" = {"__index"=this, "receive"=ngx_http_lua_socket_tcp_receive, "receiveuntil"=ngx_http_lua_socket_tcp_receiveuntil, "settimeout"=ngx_http_lua_socket_tcp_settimeout, "settimeouts"=ngx_http_lua_socket_tcp_settimeouts}}}
+    //////////////////////////////////////////////////////////////////
+
+
+
     lua_pushcfunction(L, ngx_http_lua_socket_tcp_receiveuntil);
     lua_setfield(L, -2, "receiveuntil");
+    //////////////////////////////////////////////////////////////////////
+    //
+    //
+    //
+    //             { "receive"=ngx_http_lua_socket_tcp_receive, "receiveuntil"=ngx_http_lua_socket_tcp_receiveuntil}
+    //             ngx_http_lua_raw_req_socket_metatable_key
+    //  1   -1     {"socket"={"tcp"=ngx_http_lua_socket_tcp, "stream" = ngx_http_lua_socket_tcp,  "connect"="local sock ....", "ngx_http_lua_req_socket_metatable_key" = {"__index"=this, "receive"=ngx_http_lua_socket_tcp_receive, "receiveuntil"=ngx_http_lua_socket_tcp_receiveuntil, "settimeout"=ngx_http_lua_socket_tcp_settimeout, "settimeouts"=ngx_http_lua_socket_tcp_settimeouts}}}
+    //////////////////////////////////////////////////////////////////
+
 
     lua_pushcfunction(L, ngx_http_lua_socket_tcp_send);
     lua_setfield(L, -2, "send");
+    //////////////////////////////////////////////////////////////////////
+    //
+    //
+    //
+    //             { "receive"=ngx_http_lua_socket_tcp_receive, "receiveuntil"=ngx_http_lua_socket_tcp_receiveuntil, "settimeout"=ngx_http_lua_socket_tcp_send}
+    //             ngx_http_lua_raw_req_socket_metatable_key
+    //  1   -1     {"socket"={"tcp"=ngx_http_lua_socket_tcp, "stream" = ngx_http_lua_socket_tcp,  "connect"="local sock ....", "ngx_http_lua_req_socket_metatable_key" = {"__index"=this, "receive"=ngx_http_lua_socket_tcp_receive, "receiveuntil"=ngx_http_lua_socket_tcp_receiveuntil, "settimeout"=ngx_http_lua_socket_tcp_settimeout, "settimeouts"=ngx_http_lua_socket_tcp_settimeouts}}}
+    //////////////////////////////////////////////////////////////////
+
 
     lua_pushcfunction(L, ngx_http_lua_socket_tcp_settimeout);
     lua_setfield(L, -2, "settimeout"); /* ngx socket mt */
 
+    //////////////////////////////////////////////////////////////////////
+    //
+    //
+    //
+    //             { "receive"=ngx_http_lua_socket_tcp_receive, "receiveuntil"=ngx_http_lua_socket_tcp_receiveuntil, "settimeout"=ngx_http_lua_socket_tcp_send}
+    //             ngx_http_lua_raw_req_socket_metatable_key
+    //  1   -1     {"socket"={"tcp"=ngx_http_lua_socket_tcp, "stream" = ngx_http_lua_socket_tcp,  "connect"="local sock ....", "ngx_http_lua_req_socket_metatable_key" = {"__index"=this, "receive"=ngx_http_lua_socket_tcp_receive, "receiveuntil"=ngx_http_lua_socket_tcp_receiveuntil, "settimeout"=ngx_http_lua_socket_tcp_settimeout, "settimeouts"=ngx_http_lua_socket_tcp_settimeouts}}}
+    //////////////////////////////////////////////////////////////////
+
     lua_pushcfunction(L, ngx_http_lua_socket_tcp_settimeouts);
     lua_setfield(L, -2, "settimeouts"); /* ngx socket mt */
+    //////////////////////////////////////////////////////////////////////
+    //
+    //             { "receive"=ngx_http_lua_socket_tcp_receive, "receiveuntil"=ngx_http_lua_socket_tcp_receiveuntil, "settimeout"=ngx_http_lua_socket_tcp_send,  "settimeouts"=ngx_http_lua_socket_tcp_settimeouts}
+    //             { "receive"=ngx_http_lua_socket_tcp_receive, "receiveuntil"=ngx_http_lua_socket_tcp_receiveuntil, "settimeout"=ngx_http_lua_socket_tcp_send, ""}
+    //             ngx_http_lua_raw_req_socket_metatable_key
+    //  1   -1     {"socket"={"tcp"=ngx_http_lua_socket_tcp, "stream" = ngx_http_lua_socket_tcp,  "connect"="local sock ....", "ngx_http_lua_req_socket_metatable_key" = {"__index"=this, "receive"=ngx_http_lua_socket_tcp_receive, "receiveuntil"=ngx_http_lua_socket_tcp_receiveuntil, "settimeout"=ngx_http_lua_socket_tcp_settimeout, "settimeouts"=ngx_http_lua_socket_tcp_settimeouts}}}
+    //////////////////////////////////////////////////////////////////
 
     lua_pushvalue(L, -1);
     lua_setfield(L, -2, "__index");
+    //////////////////////////////////////////////////////////////////////
+    //
+    //
+    //
+    //             { "__index" = this, "receive"=ngx_http_lua_socket_tcp_receive, "receiveuntil"=ngx_http_lua_socket_tcp_receiveuntil, "settimeout"=ngx_http_lua_socket_tcp_send,  "settimeouts"=ngx_http_lua_socket_tcp_settimeouts}
+    //             ngx_http_lua_raw_req_socket_metatable_key
+    //  1   -1     {"socket"={"tcp"=ngx_http_lua_socket_tcp, "stream" = ngx_http_lua_socket_tcp,  "connect"="local sock ....", "ngx_http_lua_req_socket_metatable_key" = {"__index"=this, "receive"=ngx_http_lua_socket_tcp_receive, "receiveuntil"=ngx_http_lua_socket_tcp_receiveuntil, "settimeout"=ngx_http_lua_socket_tcp_settimeout, "settimeouts"=ngx_http_lua_socket_tcp_settimeouts}}}
+    //////////////////////////////////////////////////////////////////
 
     lua_rawset(L, LUA_REGISTRYINDEX);
     /* }}} */
+    //////////////////////////////////////////////////////////////////////
+    //
+    //
+    //
+    //            {     "socket"={    "tcp"=ngx_http_lua_socket_tcp,"stream" = ngx_http_lua_socket_tcp,"connect"="local sock ...."}, 
+    //                                "ngx_http_lua_req_socket_metatable_key" = {"__index"=this, "receive"=ngx_http_lua_socket_tcp_receive, "receiveuntil"=ngx_http_lua_socket_tcp_receiveuntil, "settimeout"=ngx_http_lua_socket_tcp_settimeout, "settimeouts"=ngx_http_lua_socket_tcp_settimeouts}
+    //                                "ngx_http_lua_raw_req_socket_metatable_key"={ "__index" = this, "receive"=ngx_http_lua_socket_tcp_receive, "receiveuntil"=ngx_http_lua_socket_tcp_receiveuntil, "settimeout"=ngx_http_lua_socket_tcp_send,  "settimeouts"=ngx_http_lua_socket_tcp_settimeouts}
+    //                            
+    //           }
+    //////////////////////////////////////////////////////////////////
 
     /* {{{tcp object metatable */
     lua_pushlightuserdata(L, &ngx_http_lua_tcp_socket_metatable_key);
@@ -281,52 +457,207 @@ ngx_http_lua_inject_socket_tcp_api(ngx_log_t *log, lua_State *L)
 
     lua_pushcfunction(L, ngx_http_lua_socket_tcp_connect);
     lua_setfield(L, -2, "connect");
-
+    ///////////////////////////////////////////////////////////////
+    //              
+    //               {"connect"=ngx_http_lua_socket_tcp_connect}
+    //               ngx_http_lua_tcp_socket_metatable_key
+    ////////////////////////////////////////////////////////////////
 #if (NGX_HTTP_SSL)
 
     lua_pushcfunction(L, ngx_http_lua_socket_tcp_sslhandshake);
     lua_setfield(L, -2, "sslhandshake");
+    ///////////////////////////////////////////////////////////////
+    //              
+    //               {"connect"=ngx_http_lua_socket_tcp_connect, "sslhandshake"=ngx_http_lua_socket_tcp_sslhandshake}
+    //               ngx_http_lua_tcp_socket_metatable_key
+    ////////////////////////////////////////////////////////////////
 
 #endif
 
     lua_pushcfunction(L, ngx_http_lua_socket_tcp_receive);
     lua_setfield(L, -2, "receive");
+    ///////////////////////////////////////////////////////////////
+    //              
+    //               {  "connect"=ngx_http_lua_socket_tcp_connect, 
+    //                  "sslhandshake"=ngx_http_lua_socket_tcp_sslhandshake, 
+    //                  "receive"=ngx_http_lua_socket_tcp_receive
+    //               }
+    //               ngx_http_lua_tcp_socket_metatable_key
+    ////////////////////////////////////////////////////////////////
 
     lua_pushcfunction(L, ngx_http_lua_socket_tcp_receiveuntil);
     lua_setfield(L, -2, "receiveuntil");
-
+    ///////////////////////////////////////////////////////////////
+    //              
+    //               {  "connect"=ngx_http_lua_socket_tcp_connect, 
+    //                  "sslhandshake"=ngx_http_lua_socket_tcp_sslhandshake, 
+    //                  "receive"=ngx_http_lua_socket_tcp_receive,
+    //                   "receiveuntil"=ngx_http_lua_socket_tcp_receiveuntil
+    //               }
+    //               ngx_http_lua_tcp_socket_metatable_key
+    ////////////////////////////////////////////////////////////////
     lua_pushcfunction(L, ngx_http_lua_socket_tcp_send);
     lua_setfield(L, -2, "send");
-
+    ///////////////////////////////////////////////////////////////
+    //              
+    //               {  "connect"=ngx_http_lua_socket_tcp_connect, 
+    //                  "sslhandshake"=ngx_http_lua_socket_tcp_sslhandshake, 
+    //                  "receive"=ngx_http_lua_socket_tcp_receive,
+    //                   "receiveuntil"=ngx_http_lua_socket_tcp_receiveuntil,
+    //                   "send"=ngx_http_lua_socket_tcp_send
+    //               }
+    //               ngx_http_lua_tcp_socket_metatable_key
+    ////////////////////////////////////////////////////////////////
     lua_pushcfunction(L, ngx_http_lua_socket_tcp_close);
     lua_setfield(L, -2, "close");
-
+    ///////////////////////////////////////////////////////////////
+    //              
+    //               {  "connect"=ngx_http_lua_socket_tcp_connect, 
+    //                  "sslhandshake"=ngx_http_lua_socket_tcp_sslhandshake, 
+    //                  "receive"=ngx_http_lua_socket_tcp_receive,
+    //                   "receiveuntil"=ngx_http_lua_socket_tcp_receiveuntil,
+    //                   "send"=ngx_http_lua_socket_tcp_send,
+    //                   "close"=ngx_http_lua_socket_tcp_close
+    //               }
+    //               ngx_http_lua_tcp_socket_metatable_key
+    ////////////////////////////////////////////////////////////////
     lua_pushcfunction(L, ngx_http_lua_socket_tcp_setoption);
     lua_setfield(L, -2, "setoption");
-
+    ///////////////////////////////////////////////////////////////
+    //              
+    //               {  "connect"=ngx_http_lua_socket_tcp_connect, 
+    //                  "sslhandshake"=ngx_http_lua_socket_tcp_sslhandshake, 
+    //                  "receive"=ngx_http_lua_socket_tcp_receive,
+    //                   "receiveuntil"=ngx_http_lua_socket_tcp_receiveuntil,
+    //                   "send"=ngx_http_lua_socket_tcp_send,
+    //                   "close"=ngx_http_lua_socket_tcp_close,
+    //                   "setoption"=ngx_http_lua_socket_tcp_setoption
+    //               }
+    //               ngx_http_lua_tcp_socket_metatable_key
+    ////////////////////////////////////////////////////////////////
     lua_pushcfunction(L, ngx_http_lua_socket_tcp_settimeout);
     lua_setfield(L, -2, "settimeout"); /* ngx socket mt */
-
+    ///////////////////////////////////////////////////////////////
+    //              
+    //               {  "connect"=ngx_http_lua_socket_tcp_connect, 
+    //                  "sslhandshake"=ngx_http_lua_socket_tcp_sslhandshake, 
+    //                  "receive"=ngx_http_lua_socket_tcp_receive,
+    //                   "receiveuntil"=ngx_http_lua_socket_tcp_receiveuntil,
+    //                   "send"=ngx_http_lua_socket_tcp_send,
+    //                   "close"=ngx_http_lua_socket_tcp_close,
+    //                   "setoption"=ngx_http_lua_socket_tcp_setoption,
+    //                   "settimeout"=ngx_http_lua_socket_tcp_settimeout
+    //               }
+    //               ngx_http_lua_tcp_socket_metatable_key
+    ////////////////////////////////////////////////////////////////
     lua_pushcfunction(L, ngx_http_lua_socket_tcp_settimeouts);
     lua_setfield(L, -2, "settimeouts"); /* ngx socket mt */
-
+    ///////////////////////////////////////////////////////////////
+    //              
+    //               {  "connect"=ngx_http_lua_socket_tcp_connect, 
+    //                  "sslhandshake"=ngx_http_lua_socket_tcp_sslhandshake, 
+    //                  "receive"=ngx_http_lua_socket_tcp_receive,
+    //                   "receiveuntil"=ngx_http_lua_socket_tcp_receiveuntil,
+    //                   "send"=ngx_http_lua_socket_tcp_send,
+    //                   "close"=ngx_http_lua_socket_tcp_close,
+    //                   "setoption"=ngx_http_lua_socket_tcp_setoption,
+    //                   "settimeout"=ngx_http_lua_socket_tcp_settimeout,
+    //                   "settimeouts"=ngx_http_lua_socket_tcp_settimeouts
+    //               }
+    //               ngx_http_lua_tcp_socket_metatable_key
+    ////////////////////////////////////////////////////////////////
     lua_pushcfunction(L, ngx_http_lua_socket_tcp_getreusedtimes);
     lua_setfield(L, -2, "getreusedtimes");
-
+    ///////////////////////////////////////////////////////////////
+    //              
+    //               {  "connect"=ngx_http_lua_socket_tcp_connect, 
+    //                  "sslhandshake"=ngx_http_lua_socket_tcp_sslhandshake, 
+    //                  "receive"=ngx_http_lua_socket_tcp_receive,
+    //                   "receiveuntil"=ngx_http_lua_socket_tcp_receiveuntil,
+    //                   "send"=ngx_http_lua_socket_tcp_send,
+    //                   "close"=ngx_http_lua_socket_tcp_close,
+    //                   "setoption"=ngx_http_lua_socket_tcp_setoption,
+    //                   "settimeout"=ngx_http_lua_socket_tcp_settimeout,
+    //                   "settimeouts"=ngx_http_lua_socket_tcp_settimeouts,
+    //                   "getreusedtimes"=ngx_http_lua_socket_tcp_getreusedtimes
+    //               }
+    //               ngx_http_lua_tcp_socket_metatable_key
+    ////////////////////////////////////////////////////////////////
     lua_pushcfunction(L, ngx_http_lua_socket_tcp_setkeepalive);
     lua_setfield(L, -2, "setkeepalive");
-
+    ///////////////////////////////////////////////////////////////
+    //              
+    //               {  "connect"=ngx_http_lua_socket_tcp_connect, 
+    //                  "sslhandshake"=ngx_http_lua_socket_tcp_sslhandshake, 
+    //                  "receive"=ngx_http_lua_socket_tcp_receive,
+    //                   "receiveuntil"=ngx_http_lua_socket_tcp_receiveuntil,
+    //                   "send"=ngx_http_lua_socket_tcp_send,
+    //                   "close"=ngx_http_lua_socket_tcp_close,
+    //                   "setoption"=ngx_http_lua_socket_tcp_setoption,
+    //                   "settimeout"=ngx_http_lua_socket_tcp_settimeout,
+    //                   "settimeouts"=ngx_http_lua_socket_tcp_settimeouts,
+    //                   "getreusedtimes"=ngx_http_lua_socket_tcp_getreusedtimes,
+    //                  "setkeepalive"=ngx_http_lua_socket_tcp_setkeepalive
+    //               }
+    //               ngx_http_lua_tcp_socket_metatable_key
+    ////////////////////////////////////////////////////////////////
     lua_pushvalue(L, -1);
     lua_setfield(L, -2, "__index");
     lua_rawset(L, LUA_REGISTRYINDEX);
     /* }}} */
 
+    //////////////////////////////////////////////////////////////////////
+    //
+    //      {  "socket"={    "tcp"=ngx_http_lua_socket_tcp, "stream" = ngx_http_lua_socket_tcp,"connect"="local sock ...."}, 
+    //         "ngx_http_lua_req_socket_metatable_key" = {"__index"=this, "receive"=ngx_http_lua_socket_tcp_receive, "receiveuntil"=ngx_http_lua_socket_tcp_receiveuntil, "settimeout"=ngx_http_lua_socket_tcp_settimeout, "settimeouts"=ngx_http_lua_socket_tcp_settimeouts}
+    //         "ngx_http_lua_raw_req_socket_metatable_key"={ "__index" = this, "receive"=ngx_http_lua_socket_tcp_receive, "receiveuntil"=ngx_http_lua_socket_tcp_receiveuntil, "settimeout"=ngx_http_lua_socket_tcp_send,  "settimeouts"=ngx_http_lua_socket_tcp_settimeouts}
+    //          "ngx_http_lua_tcp_socket_metatable_key"=
+    //                                                   { 
+    //                                                        "__index"=this,
+    //                                                       "connect"=ngx_http_lua_socket_tcp_connect, 
+    //                                                       "sslhandshake"=ngx_http_lua_socket_tcp_sslhandshake, 
+    //                                                       "receive"=ngx_http_lua_socket_tcp_receive,
+    //                                                       "receiveuntil"=ngx_http_lua_socket_tcp_receiveuntil,
+    //                                                       "send"=ngx_http_lua_socket_tcp_send,
+    //                                                       "close"=ngx_http_lua_socket_tcp_close,
+    //                                                       "setoption"=ngx_http_lua_socket_tcp_setoption,
+    //                                                       "settimeout"=ngx_http_lua_socket_tcp_settimeout,
+    //                                                       "settimeouts"=ngx_http_lua_socket_tcp_settimeouts,
+    //                                                       "getreusedtimes"=ngx_http_lua_socket_tcp_getreusedtimes,
+    //                                                       "setkeepalive"=ngx_http_lua_socket_tcp_setkeepalive
+    //                                                    }
+    //     }
+    ////////////////////////////////////////////////////////////////
     /* {{{upstream userdata metatable */
     lua_pushlightuserdata(L, &ngx_http_lua_upstream_udata_metatable_key);
     lua_createtable(L, 0 /* narr */, 1 /* nrec */); /* metatable */
     lua_pushcfunction(L, ngx_http_lua_socket_tcp_upstream_destroy);
     lua_setfield(L, -2, "__gc");
     lua_rawset(L, LUA_REGISTRYINDEX);
+    //////////////////////////////////////////////////////////////////////
+    //
+    //            {                   "socket"={    "tcp"=ngx_http_lua_socket_tcp, "stream" = ngx_http_lua_socket_tcp,"connect"="local sock ...."}, 
+    //                                "ngx_http_lua_req_socket_metatable_key" = {"__index"=this, "receive"=ngx_http_lua_socket_tcp_receive, "receiveuntil"=ngx_http_lua_socket_tcp_receiveuntil, "settimeout"=ngx_http_lua_socket_tcp_settimeout, "settimeouts"=ngx_http_lua_socket_tcp_settimeouts}
+    //                                "ngx_http_lua_raw_req_socket_metatable_key"={ "__index" = this, "receive"=ngx_http_lua_socket_tcp_receive, "receiveuntil"=ngx_http_lua_socket_tcp_receiveuntil, "settimeout"=ngx_http_lua_socket_tcp_send,  "settimeouts"=ngx_http_lua_socket_tcp_settimeouts}
+    //                                 "ngx_http_lua_tcp_socket_metatable_key"=
+    //                                                                          { 
+    //                                                                               "__index"=this,
+    //                                                                              "connect"=ngx_http_lua_socket_tcp_connect, 
+    //                                                                              "sslhandshake"=ngx_http_lua_socket_tcp_sslhandshake, 
+    //                                                                              "receive"=ngx_http_lua_socket_tcp_receive,
+    //                                                                              "receiveuntil"=ngx_http_lua_socket_tcp_receiveuntil,
+    //                                                                              "send"=ngx_http_lua_socket_tcp_send,
+    //                                                                              "close"=ngx_http_lua_socket_tcp_close,
+    //                                                                              "setoption"=ngx_http_lua_socket_tcp_setoption,
+    //                                                                              "settimeout"=ngx_http_lua_socket_tcp_settimeout,
+    //                                                                              "settimeouts"=ngx_http_lua_socket_tcp_settimeouts,
+    //                                                                              "getreusedtimes"=ngx_http_lua_socket_tcp_getreusedtimes,
+    //                                                                              "setkeepalive"=ngx_http_lua_socket_tcp_setkeepalive
+    //                                                                           },
+    //                                "ngx_http_lua_upstream_udata_metatable_key"={"__gc" = ngx_http_lua_socket_tcp_upstream_destroy}
+    //          }
+    ////////////////////////////////////////////////////////////////
+
     /* }}} */
 
     /* {{{downstream userdata metatable */
@@ -335,6 +666,30 @@ ngx_http_lua_inject_socket_tcp_api(ngx_log_t *log, lua_State *L)
     lua_pushcfunction(L, ngx_http_lua_socket_downstream_destroy);
     lua_setfield(L, -2, "__gc");
     lua_rawset(L, LUA_REGISTRYINDEX);
+    //////////////////////////////////////////////////////////////////////
+    //
+    //      {  "socket"={    "tcp"=ngx_http_lua_socket_tcp, "stream" = ngx_http_lua_socket_tcp,"connect"="local sock ...."}, 
+    //         "ngx_http_lua_req_socket_metatable_key" = {"__index"=this, "receive"=ngx_http_lua_socket_tcp_receive, "receiveuntil"=ngx_http_lua_socket_tcp_receiveuntil, "settimeout"=ngx_http_lua_socket_tcp_settimeout, "settimeouts"=ngx_http_lua_socket_tcp_settimeouts}
+    //         "ngx_http_lua_raw_req_socket_metatable_key"={ "__index" = this, "receive"=ngx_http_lua_socket_tcp_receive, "receiveuntil"=ngx_http_lua_socket_tcp_receiveuntil, "settimeout"=ngx_http_lua_socket_tcp_send,  "settimeouts"=ngx_http_lua_socket_tcp_settimeouts}
+    //          "ngx_http_lua_tcp_socket_metatable_key"=
+    //                                                   { 
+    //                                                        "__index"=this,
+    //                                                       "connect"=ngx_http_lua_socket_tcp_connect, 
+    //                                                       "sslhandshake"=ngx_http_lua_socket_tcp_sslhandshake, 
+    //                                                       "receive"=ngx_http_lua_socket_tcp_receive,
+    //                                                       "receiveuntil"=ngx_http_lua_socket_tcp_receiveuntil,
+    //                                                       "send"=ngx_http_lua_socket_tcp_send,
+    //                                                       "close"=ngx_http_lua_socket_tcp_close,
+    //                                                       "setoption"=ngx_http_lua_socket_tcp_setoption,
+    //                                                       "settimeout"=ngx_http_lua_socket_tcp_settimeout,
+    //                                                       "settimeouts"=ngx_http_lua_socket_tcp_settimeouts,
+    //                                                       "getreusedtimes"=ngx_http_lua_socket_tcp_getreusedtimes,
+    //                                                       "setkeepalive"=ngx_http_lua_socket_tcp_setkeepalive
+    //                                                    },
+    //         "ngx_http_lua_upstream_udata_metatable_key"={"__gc" = ngx_http_lua_socket_tcp_upstream_destroy}
+    //         "ngx_http_lua_downstream_udata_metatable_key"={"__gc" = ngx_http_lua_socket_downstream_destroy}
+    //       }
+    ////////////////////////////////////////////////////////////////
     /* }}} */
 
     /* {{{socket pool userdata metatable */
@@ -343,6 +698,31 @@ ngx_http_lua_inject_socket_tcp_api(ngx_log_t *log, lua_State *L)
     lua_pushcfunction(L, ngx_http_lua_socket_shutdown_pool);
     lua_setfield(L, -2, "__gc");
     lua_rawset(L, LUA_REGISTRYINDEX);
+    //////////////////////////////////////////////////////////////////////
+    //
+    //      {  "socket"={    "tcp"=ngx_http_lua_socket_tcp, "stream" = ngx_http_lua_socket_tcp,"connect"="local sock ...."}, 
+    //         "ngx_http_lua_req_socket_metatable_key" = {"__index"=this, "receive"=ngx_http_lua_socket_tcp_receive, "receiveuntil"=ngx_http_lua_socket_tcp_receiveuntil, "settimeout"=ngx_http_lua_socket_tcp_settimeout, "settimeouts"=ngx_http_lua_socket_tcp_settimeouts}
+    //         "ngx_http_lua_raw_req_socket_metatable_key"={ "__index" = this, "receive"=ngx_http_lua_socket_tcp_receive, "receiveuntil"=ngx_http_lua_socket_tcp_receiveuntil, "settimeout"=ngx_http_lua_socket_tcp_send,  "settimeouts"=ngx_http_lua_socket_tcp_settimeouts}
+    //          "ngx_http_lua_tcp_socket_metatable_key"=
+    //                                                   { 
+    //                                                        "__index"=this,
+    //                                                       "connect"=ngx_http_lua_socket_tcp_connect, 
+    //                                                       "sslhandshake"=ngx_http_lua_socket_tcp_sslhandshake, 
+    //                                                       "receive"=ngx_http_lua_socket_tcp_receive,
+    //                                                       "receiveuntil"=ngx_http_lua_socket_tcp_receiveuntil,
+    //                                                       "send"=ngx_http_lua_socket_tcp_send,
+    //                                                       "close"=ngx_http_lua_socket_tcp_close,
+    //                                                       "setoption"=ngx_http_lua_socket_tcp_setoption,
+    //                                                       "settimeout"=ngx_http_lua_socket_tcp_settimeout,
+    //                                                       "settimeouts"=ngx_http_lua_socket_tcp_settimeouts,
+    //                                                       "getreusedtimes"=ngx_http_lua_socket_tcp_getreusedtimes,
+    //                                                       "setkeepalive"=ngx_http_lua_socket_tcp_setkeepalive
+    //                                                    },
+    //         "ngx_http_lua_upstream_udata_metatable_key"={"__gc" = ngx_http_lua_socket_tcp_upstream_destroy}
+    //         "ngx_http_lua_downstream_udata_metatable_key"={"__gc" = ngx_http_lua_socket_downstream_destroy}
+    //         "ngx_http_lua_pool_udata_metatable_key"={"__gc" = ngx_http_lua_socket_shutdown_pool}
+    //       }
+    ////////////////////////////////////////////////////////////////
     /* }}} */
 
     /* {{{socket compiled pattern userdata metatable */
@@ -351,6 +731,32 @@ ngx_http_lua_inject_socket_tcp_api(ngx_log_t *log, lua_State *L)
     lua_pushcfunction(L, ngx_http_lua_socket_cleanup_compiled_pattern);
     lua_setfield(L, -2, "__gc");
     lua_rawset(L, LUA_REGISTRYINDEX);
+   //////////////////////////////////////////////////////////////////////
+    //
+    //      {  "socket"={    "tcp"=ngx_http_lua_socket_tcp, "stream" = ngx_http_lua_socket_tcp,"connect"="local sock ...."}, 
+    //         "ngx_http_lua_req_socket_metatable_key" = {"__index"=this, "receive"=ngx_http_lua_socket_tcp_receive, "receiveuntil"=ngx_http_lua_socket_tcp_receiveuntil, "settimeout"=ngx_http_lua_socket_tcp_settimeout, "settimeouts"=ngx_http_lua_socket_tcp_settimeouts}
+    //         "ngx_http_lua_raw_req_socket_metatable_key"={ "__index" = this, "receive"=ngx_http_lua_socket_tcp_receive, "receiveuntil"=ngx_http_lua_socket_tcp_receiveuntil, "settimeout"=ngx_http_lua_socket_tcp_send,  "settimeouts"=ngx_http_lua_socket_tcp_settimeouts}
+    //          "ngx_http_lua_tcp_socket_metatable_key"=
+    //                                                   { 
+    //                                                        "__index"=this,
+    //                                                       "connect"=ngx_http_lua_socket_tcp_connect, 
+    //                                                       "sslhandshake"=ngx_http_lua_socket_tcp_sslhandshake, 
+    //                                                       "receive"=ngx_http_lua_socket_tcp_receive,
+    //                                                       "receiveuntil"=ngx_http_lua_socket_tcp_receiveuntil,
+    //                                                       "send"=ngx_http_lua_socket_tcp_send,
+    //                                                       "close"=ngx_http_lua_socket_tcp_close,
+    //                                                       "setoption"=ngx_http_lua_socket_tcp_setoption,
+    //                                                       "settimeout"=ngx_http_lua_socket_tcp_settimeout,
+    //                                                       "settimeouts"=ngx_http_lua_socket_tcp_settimeouts,
+    //                                                       "getreusedtimes"=ngx_http_lua_socket_tcp_getreusedtimes,
+    //                                                       "setkeepalive"=ngx_http_lua_socket_tcp_setkeepalive
+    //                                                    },
+    //         "ngx_http_lua_upstream_udata_metatable_key"={"__gc" = ngx_http_lua_socket_tcp_upstream_destroy},
+    //         "ngx_http_lua_downstream_udata_metatable_key"={"__gc" = ngx_http_lua_socket_downstream_destroy},
+    //         "ngx_http_lua_pool_udata_metatable_key"={"__gc" = ngx_http_lua_socket_shutdown_pool},
+    //         "ngx_http_lua_pattern_udata_metatable_key"={"__gc" = ngx_http_lua_socket_cleanup_compiled_pattern}
+    //       }
+    ////////////////////////////////////////////////////////////////
     /* }}} */
 
 #if (NGX_HTTP_SSL)
@@ -361,6 +767,33 @@ ngx_http_lua_inject_socket_tcp_api(ngx_log_t *log, lua_State *L)
     lua_pushcfunction(L, ngx_http_lua_ssl_free_session);
     lua_setfield(L, -2, "__gc");
     lua_rawset(L, LUA_REGISTRYINDEX);
+   //////////////////////////////////////////////////////////////////////
+    //
+    //      {  "socket"={    "tcp"=ngx_http_lua_socket_tcp, "stream" = ngx_http_lua_socket_tcp,"connect"="local sock ...."}, 
+    //         "ngx_http_lua_req_socket_metatable_key" = {"__index"=this, "receive"=ngx_http_lua_socket_tcp_receive, "receiveuntil"=ngx_http_lua_socket_tcp_receiveuntil, "settimeout"=ngx_http_lua_socket_tcp_settimeout, "settimeouts"=ngx_http_lua_socket_tcp_settimeouts}
+    //         "ngx_http_lua_raw_req_socket_metatable_key"={ "__index" = this, "receive"=ngx_http_lua_socket_tcp_receive, "receiveuntil"=ngx_http_lua_socket_tcp_receiveuntil, "settimeout"=ngx_http_lua_socket_tcp_send,  "settimeouts"=ngx_http_lua_socket_tcp_settimeouts}
+    //          "ngx_http_lua_tcp_socket_metatable_key"=
+    //                                                   { 
+    //                                                        "__index"=this,
+    //                                                       "connect"=ngx_http_lua_socket_tcp_connect, 
+    //                                                       "sslhandshake"=ngx_http_lua_socket_tcp_sslhandshake, 
+    //                                                       "receive"=ngx_http_lua_socket_tcp_receive,
+    //                                                       "receiveuntil"=ngx_http_lua_socket_tcp_receiveuntil,
+    //                                                       "send"=ngx_http_lua_socket_tcp_send,
+    //                                                       "close"=ngx_http_lua_socket_tcp_close,
+    //                                                       "setoption"=ngx_http_lua_socket_tcp_setoption,
+    //                                                       "settimeout"=ngx_http_lua_socket_tcp_settimeout,
+    //                                                       "settimeouts"=ngx_http_lua_socket_tcp_settimeouts,
+    //                                                       "getreusedtimes"=ngx_http_lua_socket_tcp_getreusedtimes,
+    //                                                       "setkeepalive"=ngx_http_lua_socket_tcp_setkeepalive
+    //                                                    },
+    //         "ngx_http_lua_upstream_udata_metatable_key"={"__gc" = ngx_http_lua_socket_tcp_upstream_destroy},
+    //         "ngx_http_lua_downstream_udata_metatable_key"={"__gc" = ngx_http_lua_socket_downstream_destroy},
+    //         "ngx_http_lua_pool_udata_metatable_key"={"__gc" = ngx_http_lua_socket_shutdown_pool},
+    //         "ngx_http_lua_pattern_udata_metatable_key"={"__gc" = ngx_http_lua_socket_cleanup_compiled_pattern},
+    //         "ngx_http_lua_ssl_session_metatable_key"={"__gc" = ngx_http_lua_ssl_free_session}
+    //       }
+    ////////////////////////////////////////////////////////////////
     /* }}} */
 
 #endif
@@ -701,7 +1134,7 @@ ngx_http_lua_socket_tcp_connect(lua_State *L)
     if (u->resolved->sockaddr) {
         rc = ngx_http_lua_socket_resolve_retval_handler(r, u, L);
         if (rc == NGX_AGAIN) {
-            return lua_yield(L, 0);
+            return lua_yield(L, 0);//挂起协程
         }
 
         return rc;

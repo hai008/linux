@@ -11,7 +11,7 @@
 
 
 typedef struct {
-    ngx_array_t  *codes;        /* uintptr_t */
+    ngx_array_t  *codes;        /* uintptr_t *///脚本
 
     ngx_uint_t    stack_size;
 
@@ -169,6 +169,7 @@ ngx_http_rewrite_handler(ngx_http_request_t *r)
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
 
+    //执行脚本引擎  如set $foo $1
     e->ip = rlcf->codes->elts;//ngx_http_script_value_code
     e->request = r;
     e->quote = 1;
@@ -888,7 +889,7 @@ ngx_http_rewrite_variable(ngx_conf_t *cf, ngx_http_rewrite_loc_conf_t *lcf,
     return NGX_CONF_OK;
 }
 
-
+//类似set $file t_a变量的解析
 static char *
 ngx_http_rewrite_set(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 {
@@ -897,6 +898,7 @@ ngx_http_rewrite_set(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     ngx_int_t                            index;
     ngx_str_t                           *value;
     ngx_http_variable_t                 *v;
+    //脚本引擎结构体
     ngx_http_script_var_code_t          *vcode;
     ngx_http_script_var_handler_code_t  *vhcode;
 
@@ -953,7 +955,7 @@ ngx_http_rewrite_set(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     if (vcode == NULL) {
         return NGX_CONF_ERROR;
     }
-    //设置脚本解析函数
+    //设置脚本解析函数，等请求时，再回调函数
     vcode->code = ngx_http_script_set_var_code;
     vcode->index = (uintptr_t) index;
 

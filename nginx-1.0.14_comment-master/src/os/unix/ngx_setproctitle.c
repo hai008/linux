@@ -44,13 +44,14 @@ ngx_init_setproctitle(ngx_log_t *log)
         size += ngx_strlen(environ[i]) + 1;
     }
 
-    p = ngx_alloc(size, log);
+    p = ngx_alloc(size, log);//申请新内存
     if (p == NULL) {
         return NGX_ERROR;
     }
 
     ngx_os_argv_last = ngx_os_argv[0];
 
+    //移动到 ngx_os_argv最后一个元素的下一元素，也就是environ的第一个元素
     for (i = 0; ngx_os_argv[i]; i++) {
         if (ngx_os_argv_last == ngx_os_argv[i]) {
             ngx_os_argv_last = ngx_os_argv[i] + ngx_strlen(ngx_os_argv[i]) + 1;
@@ -58,14 +59,14 @@ ngx_init_setproctitle(ngx_log_t *log)
     }
 
     for (i = 0; environ[i]; i++) {
-        if (ngx_os_argv_last == environ[i]) {
+        if (ngx_os_argv_last == environ[i]) {//找到argv在环境变量里的位置
 
             size = ngx_strlen(environ[i]) + 1;
             ngx_os_argv_last = environ[i] + size;
 
-            ngx_cpystrn(p, (u_char *) environ[i], size);
-            environ[i] = (char *) p;
-            p += size;
+            ngx_cpystrn(p, (u_char *) environ[i], size);//将环境变量里的移动到新内存中
+            environ[i] = (char *) p;//修改环境变量指向地址
+            p += size;//移动指针
         }
     }
 
@@ -88,10 +89,10 @@ ngx_setproctitle(char *title)
 #endif
 
     ngx_os_argv[1] = NULL;
-
+    //把"nginx: "放到argv[0]里
     p = ngx_cpystrn((u_char *) ngx_os_argv[0], (u_char *) "nginx: ",
                     ngx_os_argv_last - ngx_os_argv[0]);
-
+    //把"worker process"放到argv[0]后面
     p = ngx_cpystrn(p, (u_char *) title, ngx_os_argv_last - (char *) p);
 
 #if (NGX_SOLARIS)

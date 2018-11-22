@@ -588,7 +588,7 @@ ngx_http_lua_ngx_flush(lua_State *L)
         coctx->cleanup = ngx_http_lua_flush_cleanup;
         coctx->data = r;
 
-        return lua_yield(L, 0);
+        return lua_yield(L, 0);//挂起协程
     }
 
     ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,

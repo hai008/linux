@@ -2497,7 +2497,7 @@ ngx_http_subrequest(ngx_http_request_t *r,
     return ngx_http_post_request(sr, NULL);//加入待执行请求链表
 }
 
-
+//location 内部跳转
 ngx_int_t
 ngx_http_internal_redirect(ngx_http_request_t *r,
     ngx_str_t *uri, ngx_str_t *args)
@@ -2506,7 +2506,7 @@ ngx_http_internal_redirect(ngx_http_request_t *r,
 
     r->uri_changes--;
 
-    if (r->uri_changes == 0) {
+    if (r->uri_changes == 0) {//内部跳转最大数
         ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
                       "rewrite or internal redirection cycle "
                       "while internally redirecting to \"%V\"", uri);
@@ -2516,10 +2516,10 @@ ngx_http_internal_redirect(ngx_http_request_t *r,
         return NGX_DONE;
     }
 
-    r->uri = *uri;
+    r->uri = *uri;//请求uri
 
     if (args) {
-        r->args = *args;
+        r->args = *args;//请求的参数
 
     } else {
         ngx_str_null(&r->args);

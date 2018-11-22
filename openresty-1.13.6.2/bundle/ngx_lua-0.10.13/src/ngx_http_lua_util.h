@@ -362,6 +362,7 @@ ngx_http_lua_get_globals_table(lua_State *L)
 static ngx_inline void
 ngx_http_lua_set_globals_table(lua_State *L)
 {
+    //把栈顶元素放置到给定位置而不移动其它元素 （因此覆盖了那个位置处的值），然后将栈顶元素弹出。
     lua_replace(L, LUA_GLOBALSINDEX);
 }
 

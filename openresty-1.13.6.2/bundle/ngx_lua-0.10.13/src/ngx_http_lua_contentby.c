@@ -61,7 +61,7 @@ ngx_http_lua_content_by_chunk(lua_State *L, ngx_http_request_t *r)
     }
 
     /*  move code closure to new coroutine */
-    lua_xmove(L, co, 1);
+    lua_xmove(L, co, 1);//栈移动数据
 
     /*  set closure's env table to new coroutine's globals table */
     ngx_http_lua_get_globals_table(co);
@@ -116,7 +116,7 @@ ngx_http_lua_content_by_chunk(lua_State *L, ngx_http_request_t *r)
     } else {
         r->read_event_handler = ngx_http_block_reading;
     }
-
+    //执行lua协程
     rc = ngx_http_lua_run_thread(L, r, ctx, 0);
 
     if (rc == NGX_ERROR || rc >= NGX_OK) {
