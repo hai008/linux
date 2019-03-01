@@ -284,7 +284,7 @@ ngx_init_cycle(ngx_cycle_t *old_cycle)
         return NULL;
     }
 
-    //第二次调用ngx_conf_parse函数，此处才是解析nginx配置文件
+    //解析nginx配置文件
 	//开始解析配置文件了，解析配置文件它会一行行读取，然后如果遇到指令
     //则会查找到对应的ngx_command_t对象，然后执行对应的回调set方法。这里所有动作都在ngx_conf_parse这个函数中进行.
     //这函数是立即模块的核心函数，对配置文件边解析边处理
@@ -1300,7 +1300,7 @@ ngx_shared_memory_add(ngx_conf_t *cf, ngx_str_t *name, size_t size, void *tag)
     ngx_shm_zone_t   *shm_zone;
     ngx_list_part_t  *part;
 
-    part = &cf->cycle->shared_memory.part;
+    part = &cf->cycle->shared_memory.part;//链表第一个元素
     shm_zone = part->elts;
 
     for (i = 0; /* void */ ; i++) {

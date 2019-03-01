@@ -32,7 +32,7 @@ ngx_rbtree_insert(ngx_thread_volatile ngx_rbtree_t *tree,
     root = (ngx_rbtree_node_t **) &tree->root;
     sentinel = tree->sentinel;
 
-    if (*root == sentinel) {
+    if (*root == sentinel) {//如果红黑树是空，则插入根节点，标记为黑
         node->parent = NULL;
         node->left = sentinel;
         node->right = sentinel;
@@ -42,19 +42,34 @@ ngx_rbtree_insert(ngx_thread_volatile ngx_rbtree_t *tree,
         return;
     }
 
-    tree->insert(*root, node, sentinel);
+    tree->insert(*root, node, sentinel);//如果是新插入，标记为红节点
 
     /* re-balance tree */
 
     while (node != *root && ngx_rbt_is_red(node->parent)) {
-
+        //父节点是红色，调整树
         if (node->parent == node->parent->parent->left) {
             temp = node->parent->parent->right;
 
             if (ngx_rbt_is_red(temp)) {
+                //             根
+                //            /   \  
+                //           黑    
+                //         /   \  
+                //        红    红  
+                //        /
+                //      红（新）
                 ngx_rbt_black(node->parent);
                 ngx_rbt_black(temp);
                 ngx_rbt_red(node->parent->parent);
+                //             根
+                //            /   \  
+                //           红    
+                //         /   \  
+                //        黑    黑  
+                //        /
+                //      红（新）
+                
                 node = node->parent->parent;
 
             } else {
@@ -70,7 +85,13 @@ ngx_rbtree_insert(ngx_thread_volatile ngx_rbtree_t *tree,
 
         } else {
             temp = node->parent->parent->left;
-
+            //             根
+            //            /   \  
+            //           黑    
+            //         /   \  
+            //        黑    红  
+            //       / 
+            //     红（新）
             if (ngx_rbt_is_red(temp)) {
                 ngx_rbt_black(node->parent);
                 ngx_rbt_black(temp);
@@ -115,7 +136,7 @@ ngx_rbtree_insert_value(ngx_rbtree_node_t *temp, ngx_rbtree_node_t *node,
     node->parent = temp;
     node->left = sentinel;
     node->right = sentinel;
-    ngx_rbt_red(node);
+    ngx_rbt_red(node);//插入节点标记为红色
 }
 
 

@@ -730,7 +730,7 @@ ngx_http_lua_content_by_lua(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
         /* Don't eval nginx variables for inline lua code */
 
-        llcf->content_src.value = value[1];
+        llcf->content_src.value = value[1];//nginx.conf配置项content_by_lua的数据
 
         p = ngx_palloc(cf->pool,
                        chunkname_len + NGX_HTTP_LUA_INLINE_KEY_LEN + 1);
@@ -770,7 +770,7 @@ ngx_http_lua_content_by_lua(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
         }
     }
 
-    llcf->content_handler = (ngx_http_handler_pt) cmd->post;
+    llcf->content_handler = (ngx_http_handler_pt) cmd->post;//ngx_command_s 结构体的最后一个参数ngx_http_lua_content_handler_inline
 
     lmcf = ngx_http_conf_get_module_main_conf(cf, ngx_http_lua_module);
 
@@ -782,7 +782,7 @@ ngx_http_lua_content_by_lua(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
         return NGX_CONF_ERROR;
     }
 
-    clcf->handler = ngx_http_lua_content_handler;
+    clcf->handler = ngx_http_lua_content_handler;//ngx_http_lua_content_handler里会回调llcf->content_handler
 
     return NGX_CONF_OK;
 }

@@ -1967,7 +1967,7 @@ ngx_http_file_cache_manager(void *data)
     cache->last = ngx_current_msec;
     cache->files = 0;
 
-    next = (ngx_msec_t) ngx_http_file_cache_expire(cache) * 1000;
+    next = (ngx_msec_t) ngx_http_file_cache_expire(cache) * 1000;//查看缓存是否过期
 
     if (next == 0) {
         next = cache->manager_sleep;

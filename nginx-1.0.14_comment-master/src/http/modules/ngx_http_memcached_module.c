@@ -265,7 +265,7 @@ ngx_http_memcached_create_request(ngx_http_request_t *r)
     ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "http memcached request: \"%V\"", &ctx->key);
 
-    *b->last++ = CR; *b->last++ = LF;
+    *b->last++ = CR; *b->last++ = LF;//回车换行
 
     return NGX_OK;
 }

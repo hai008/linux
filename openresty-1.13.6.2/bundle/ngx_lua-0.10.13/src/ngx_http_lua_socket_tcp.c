@@ -814,6 +814,7 @@ ngx_http_lua_socket_tcp(lua_State *L)
     ngx_http_request_t      *r;
     ngx_http_lua_ctx_t      *ctx;
 
+    //返回栈第一个元素
     if (lua_gettop(L) != 0) {
         return luaL_error(L, "expecting zero arguments, but got %d",
                           lua_gettop(L));
@@ -2203,7 +2204,7 @@ ngx_http_lua_socket_tcp_receive(lua_State *L)
     ngx_http_lua_loc_conf_t             *llcf;
     ngx_http_lua_co_ctx_t               *coctx;
 
-    n = lua_gettop(L);
+    n = lua_gettop(L);// //返回栈顶索引(即栈长度)
     if (n != 1 && n != 2) {
         return luaL_error(L, "expecting 1 or 2 arguments "
                           "(including the object), but got %d", n);
@@ -5116,6 +5117,7 @@ ngx_http_lua_socket_tcp_setkeepalive(lua_State *L)
 
     llcf = ngx_http_get_module_loc_conf(r, ngx_http_lua_module);
 
+    //第一次执行set_keepalived()
     if (spool == NULL) {
         /* create a new socket pool for the current peer key */
 

@@ -145,6 +145,7 @@ ngx_http_lua_cache_loadbuffer(ngx_log_t *log, lua_State *L,
 
     dd("XXX cache key: [%s]", cache_key);
 
+    //开启lua缓存时，执行下面函数成功
     rc = ngx_http_lua_cache_load_code(log, L, (char *) cache_key);
     if (rc == NGX_OK) {
         /*  code chunk loaded from cache, sp++ */

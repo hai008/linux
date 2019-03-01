@@ -718,7 +718,7 @@ ngx_http_fastcgi_create_request(ngx_http_request_t *r)
 
     flcf = ngx_http_get_module_loc_conf(r, ngx_http_fastcgi_module);
 
-    if (flcf->params_len) {
+    if (flcf->params_len) {//配置文件里有参数
         ngx_memzero(&le, sizeof(ngx_http_script_engine_t));
 
         ngx_http_script_flush_no_cacheable_variables(r, flcf->flushes);
@@ -741,6 +741,7 @@ ngx_http_fastcgi_create_request(ngx_http_request_t *r)
         }
     }
 
+    //处理请求头
     if (flcf->upstream.pass_request_headers) {
 
         allocated = 0;

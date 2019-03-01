@@ -248,7 +248,7 @@ ngx_http_lua_access_by_chunk(lua_State *L, ngx_http_request_t *r)
     ngx_http_lua_loc_conf_t     *llcf;
 
     /*  {{{ new coroutine to handle request */
-    co = ngx_http_lua_new_thread(r, L, &co_ref);
+    co = ngx_http_lua_new_thread(r, L, &co_ref);//创建一个新协程
 
     if (co == NULL) {
         ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
@@ -259,14 +259,14 @@ ngx_http_lua_access_by_chunk(lua_State *L, ngx_http_request_t *r)
     }
 
     /*  move code closure to new coroutine */
-    lua_xmove(L, co, 1);
+    lua_xmove(L, co, 1);////主协程的栈顶是需要执行的lua函数，通过lua_xmove将栈顶函数交换到新lua协程中
 
     /*  set closure's env table to new coroutine's globals table */
     ngx_http_lua_get_globals_table(co);
     lua_setfenv(co, -2);
 
     /*  save nginx request in coroutine globals table */
-    ngx_http_lua_set_req(co, r);
+    ngx_http_lua_set_req(co, r);//保存请求结构体到栈中
 
     /*  {{{ initialize request context */
     ctx = ngx_http_get_module_ctx(r, ngx_http_lua_module);

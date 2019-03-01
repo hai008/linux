@@ -166,14 +166,14 @@ ngx_master_process_cycle(ngx_cycle_t *cycle)
 
         ngx_log_debug0(NGX_LOG_DEBUG_EVENT, cycle->log, 0, "sigsuspend");
 
-        sigsuspend(&set);
+        sigsuspend(&set);//挂起主进程，等待信号到来
 
         ngx_time_update();
 
         ngx_log_debug1(NGX_LOG_DEBUG_EVENT, cycle->log, 0,
                        "wake up, sigio %i", sigio);
 
-        if (ngx_reap) {
+        if (ngx_reap) {//有子进程退出
             ngx_reap = 0;
             ngx_log_debug0(NGX_LOG_DEBUG_EVENT, cycle->log, 0, "reap children");
 
@@ -184,7 +184,7 @@ ngx_master_process_cycle(ngx_cycle_t *cycle)
             ngx_master_process_exit(cycle);
         }
 
-        if (ngx_terminate) {
+        if (ngx_terminate) {//强制退出终止
             if (delay == 0) {
                 delay = 50;
             }
@@ -206,7 +206,7 @@ ngx_master_process_cycle(ngx_cycle_t *cycle)
             continue;
         }
 
-        if (ngx_quit) {
+        if (ngx_quit) {//清理工作后，退出终止
             ngx_signal_worker_processes(cycle,
                                         ngx_signal_value(NGX_SHUTDOWN_SIGNAL));
 
@@ -1269,7 +1269,7 @@ ngx_cache_manager_process_handler(ngx_event_t *ev)
     for (i = 0; i < ngx_cycle->paths.nelts; i++) {
 
         if (path[i]->manager) {
-            n = path[i]->manager(path[i]->data);
+            n = path[i]->manager(path[i]->data);//ngx_http_file_cache_manager
 
             next = (n <= next) ? n : next;
 

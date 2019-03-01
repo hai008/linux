@@ -192,12 +192,12 @@ ngx_http_block(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     //调用对应的create_xxx_conf回调函数
     //开始遍历    
     for (m = 0; ngx_modules[m]; m++) {
-        if (ngx_modules[m]->type != NGX_HTTP_MODULE) {
+        if (ngx_modules[m]->type != NGX_HTTP_MODULE) {//只有http模块才会实现 ngx_http_module_t里的回调函数
             continue;
         }
         
 		//得到对应的module上下文
-		//疑问：这个“ngx_modules[m]->ctx”是什么时候赋值的呢？？？？
+		//ctx在每个模块里 ngx_module_t 里初始化时赋值 
 		module = ngx_modules[m]->ctx;
 		//得到对应的索引     
 		mi = ngx_modules[m]->ctx_index;

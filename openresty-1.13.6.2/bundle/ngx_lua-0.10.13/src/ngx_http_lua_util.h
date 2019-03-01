@@ -331,19 +331,22 @@ ngx_http_lua_get_lua_vm(ngx_http_request_t *r, ngx_http_lua_ctx_t *ctx)
 #define ngx_http_lua_req_key  "__ngx_req"
 
 
+//回去请求结构体ngx_http_request_t
 static ngx_inline ngx_http_request_t *
 ngx_http_lua_get_req(lua_State *L)
 {
     ngx_http_request_t    *r;
 
-    lua_getglobal(L, ngx_http_lua_req_key);
+    lua_getglobal(L, ngx_http_lua_req_key);//获取变量，压入栈中
+
+    //如果给定索引处的值是一个完整的userdata，函数返回内存块的地址。如果值是一个lightuserdata，那么就返回它表示的指针。否则，返回NULL。
     r = lua_touserdata(L, -1);
-    lua_pop(L, 1);
+    lua_pop(L, 1);//弹出一个元素
 
     return r;
 }
 
-
+//设置请求结构体ngx_http_request_t
 static ngx_inline void
 ngx_http_lua_set_req(lua_State *L, ngx_http_request_t *r)
 {

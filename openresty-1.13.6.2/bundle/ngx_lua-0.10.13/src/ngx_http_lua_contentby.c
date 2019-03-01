@@ -219,7 +219,7 @@ ngx_http_lua_content_handler(ngx_http_request_t *r)
     ctx->entered_content_phase = 1;
 
     dd("calling content handler");
-    return llcf->content_handler(r);
+    return llcf->content_handler(r);//在ngx_http_lua_content_by_lua函数里设置的，ngx_http_lua_content_handler_inline
 }
 
 
@@ -297,6 +297,7 @@ ngx_http_lua_content_handler_inline(ngx_http_request_t *r)
     L = ngx_http_lua_get_lua_vm(r, NULL);
 
     /*  load Lua inline script (w/ cache) sp = 1 */
+    //llcf->content_src.value.data保存着nginx.conf里的content_by_lua配置lua数据
     rc = ngx_http_lua_cache_loadbuffer(r->connection->log, L,
                                        llcf->content_src.value.data,
                                        llcf->content_src.value.len,

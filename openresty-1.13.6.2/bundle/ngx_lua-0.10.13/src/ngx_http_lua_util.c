@@ -208,16 +208,16 @@ ngx_http_lua_new_state(lua_State *parent_vm, ngx_cycle_t *cycle,
 
     ngx_log_debug0(NGX_LOG_DEBUG_HTTP, log, 0, "lua creating new vm state");
 
-    L = luaL_newstate();
+    L = luaL_newstate();//生成新虚拟机VM
     if (L == NULL) {
         return NULL;
     }
 
-    luaL_openlibs(L);
+    luaL_openlibs(L);//初始化一些全局变量
 
-    lua_getglobal(L, "package");
+    lua_getglobal(L, "package");//读取变量压入栈
 
-    if (!lua_istable(L, -1)) {
+    if (!lua_istable(L, -1)) {//判断栈顶
         ngx_log_error(NGX_LOG_EMERG, log, 0,
                       "the \"package\" table does not exist");
         return NULL;
@@ -318,14 +318,17 @@ ngx_http_lua_new_thread(ngx_http_request_t *r, lua_State *L, int *ref)
     ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "lua creating new thread");
 
-    base = lua_gettop(L);
+    base = lua_gettop(L); //先保存下当前堆栈的数目，这样返回时可以直接清理栈。
 
+    //获取全局变量中储存协程的table
     lua_pushlightuserdata(L, &ngx_http_lua_coroutines_key);
-    lua_rawget(L, LUA_REGISTRYINDEX);
+    lua_rawget(L, LUA_REGISTRYINDEX);////LUA_REGISTRYINDEX是一个伪索引，代表的是注册表所在的table
+                                    ////将 注册表[ngx_http_lua_coroutines_key]的值压入堆栈
 
-//创建一条新线程，并将其压栈，并返回维护这个线程的lua_State 指针。
-//这个函数返回的新线程共享原线程的全局环境，但是它有独立的运行栈。//
-//没有显式的函数可以用来关闭或销毁掉一个线程。线程跟其它Lua对象一样是垃圾收集的条目之一。
+
+    //创建一条新线程，并将其压栈，并返回维护这个线程的lua_State 指针co。
+    //这个函数返回的新线程共享原线程的全局环境，但是它有独立的运行栈。//
+    //没有显式的函数可以用来关闭或销毁掉一个线程。线程跟其它Lua对象一样是垃圾收集的条目之一。
     co = lua_newthread(L);
 
     /*  {{{ inherit coroutine's globals to main thread's globals table
@@ -343,14 +346,14 @@ ngx_http_lua_new_thread(ngx_http_request_t *r, lua_State *L, int *ref)
     ngx_http_lua_set_globals_table(co);
     /*  }}} */
 
-    *ref = luaL_ref(L, -2);
+    *ref = luaL_ref(L, -2);////将创建的新协程保存对应的全局变量中 该方法对栈顶对象创建一个引用,放在table的index里,这里的index就是参数-2,
 
     if (*ref == LUA_NOREF) {
         lua_settop(L, base);  /* restore main thread stack */
         return NULL;
     }
 
-    lua_settop(L, base);
+    lua_settop(L, base);//恢复主协程的栈空间大小
     return co;
 }
 
@@ -667,13 +670,13 @@ ngx_http_lua_init_registry(lua_State *L, ngx_log_t *log)
 
     /* {{{ register a table to anchor lua coroutines reliably:
      * {([int]ref) = [cort]} */
-    lua_pushlightuserdata(L, &ngx_http_lua_coroutines_key);
+    lua_pushlightuserdata(L, &ngx_http_lua_coroutines_key);//将一个轻量级userdata放入栈中
     lua_createtable(L, 0, 32 /* nrec */);
     lua_rawset(L, LUA_REGISTRYINDEX);
     /* }}} */
 
     /* create the registry entry for the Lua request ctx data table */
-    lua_pushliteral(L, ngx_http_lua_ctx_tables_key);
+    lua_pushliteral(L, ngx_http_lua_ctx_tables_key);//通常在push字符串字面值时使用lua_pushliteral,在push字符串指针是使用lua_pushstring。
     lua_createtable(L, 0, 32 /* nrec */);
     lua_rawset(L, LUA_REGISTRYINDEX);
 

@@ -193,7 +193,7 @@ ngx_spawn_process(ngx_cycle_t *cycle, ngx_spawn_proc_pt proc, void *data,
         ngx_close_channel(ngx_processes[s].channel, cycle->log);
         return NGX_INVALID_PID;
 
-    case 0:
+    case 0://子进程
         ngx_pid = ngx_getpid();
         proc(cycle, data);
         break;

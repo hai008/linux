@@ -17,15 +17,15 @@ typedef struct {
     ngx_queue_t                  queue;
     ngx_msec_t                   last;
     /* integer value, 1 corresponds to 0.001 r/s */
-    ngx_uint_t                   excess;
+    ngx_uint_t                   excess;//当前请求上遗留的请求数
     u_char                       data[1];
 } ngx_http_limit_req_node_t;
 
 
 typedef struct {
-    ngx_rbtree_t                  rbtree;
+    ngx_rbtree_t                  rbtree;//方便查找
     ngx_rbtree_node_t             sentinel;
-    ngx_queue_t                   queue;
+    ngx_queue_t                   queue;//方便把过期的删除
 } ngx_http_limit_req_shctx_t;
 
 
@@ -183,11 +183,11 @@ ngx_http_limit_req_handler(ngx_http_request_t *r)
 
     hash = ngx_crc32_short(vv->data, len);
 
-    ngx_shmtx_lock(&ctx->shpool->mutex);
+    ngx_shmtx_lock(&ctx->shpool->mutex);//share_pool
 
-    ngx_http_limit_req_expire(ctx, 1);
+    ngx_http_limit_req_expire(ctx, 1);//删除队列里过期数据，比如2r/s,可以删除500ms以前的数据
 
-    rc = ngx_http_limit_req_lookup(lrcf, hash, vv->data, len, &excess);
+    rc = ngx_http_limit_req_lookup(lrcf, hash, vv->data, len, &excess);//hash一般是ip地址
 
     ngx_log_debug3(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "limit_req: %i %ui.%03ui", rc, excess / 1000, excess % 1000);
@@ -311,11 +311,11 @@ ngx_http_limit_req_rbtree_insert_value(ngx_rbtree_node_t *temp,
 
         if (node->key < temp->key) {
 
-            p = &temp->left;
+            p = &temp->left;//遍历左
 
         } else if (node->key > temp->key) {
 
-            p = &temp->right;
+            p = &temp->right;//遍历右
 
         } else { /* node->key == temp->key */
 
@@ -323,7 +323,7 @@ ngx_http_limit_req_rbtree_insert_value(ngx_rbtree_node_t *temp,
             lrnt = (ngx_http_limit_req_node_t *) &temp->color;
 
             p = (ngx_memn2cmp(lrn->data, lrnt->data, lrn->len, lrnt->len) < 0)
-                ? &temp->left : &temp->right;
+                ? &temp->left : &temp->right;//比较value大小
         }
 
         if (*p == sentinel) {
@@ -385,7 +385,7 @@ ngx_http_limit_req_lookup(ngx_http_limit_req_conf_t *lrcf, ngx_uint_t hash,
             now = (ngx_msec_t) (tp->sec * 1000 + tp->msec);
             ms = (ngx_msec_int_t) (now - lr->last);
 
-            excess = lr->excess - ctx->rate * ngx_abs(ms) / 1000 + 1000;
+            excess = lr->excess - ctx->rate * ngx_abs(ms) / 1000 + 1000;//漏桶算法  excess 表示上次处理完后剩下来的请求数 * 1000
 
             if (excess < 0) {
                 excess = 0;
@@ -443,21 +443,23 @@ ngx_http_limit_req_expire(ngx_http_limit_req_ctx_t *ctx, ngx_uint_t n)
             return;
         }
 
-        q = ngx_queue_last(&ctx->sh->queue);
+        q = ngx_queue_last(&ctx->sh->queue);//尾节点
 
-        lr = ngx_queue_data(q, ngx_http_limit_req_node_t, queue);
+        lr = ngx_queue_data(q, ngx_http_limit_req_node_t, queue);//获取队列数据
 
         if (n++ != 0) {
 
             ms = (ngx_msec_int_t) (now - lr->last);
             ms = ngx_abs(ms);
 
-            if (ms < 60000) {
+            if (ms < 60000) {//时间小于60秒，返回
                 return;
             }
 
-            excess = lr->excess - ctx->rate * ms / 1000;
-
+            excess = lr->excess - ctx->rate * ms / 1000;//比如配置 100r/s  时间间隔 6000ms;
+                                                        //excess = lr->excess - ctx->rate * ms / 1000;
+                                                        //excess = lr->excess - 100 r/s * 60000/1000
+                                                        //excess = lr->excess - 60000
             if (excess > 0) {
                 return;
             }
@@ -591,7 +593,7 @@ ngx_http_limit_req_zone(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     ngx_shm_zone_t            *shm_zone;
     ngx_http_limit_req_ctx_t  *ctx;
 
-    value = cf->args->elts;
+    value = cf->args->elts; 
 
     ctx = NULL;
     size = 0;
@@ -693,6 +695,7 @@ ngx_http_limit_req_zone(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
     ctx->rate = rate * 1000 / scale;
 
+    //创建共享内存（没有真正创建）
     shm_zone = ngx_shared_memory_add(cf, &name, size,
                                      &ngx_http_limit_req_module);
     if (shm_zone == NULL) {
@@ -803,7 +806,7 @@ ngx_http_limit_req_init(ngx_conf_t *cf)
         return NGX_ERROR;
     }
 
-    *h = ngx_http_limit_req_handler;
+    *h = ngx_http_limit_req_handler;//注册回调函数
 
     return NGX_OK;
 }
